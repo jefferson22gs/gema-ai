@@ -3,6 +3,7 @@
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text,
+  email text,
   phone_e164 text,
   phone_verified_at timestamptz,
   locale text not null default 'pt-BR',
@@ -257,8 +258,8 @@ as $$
 declare
   v_ws uuid;
 begin
-  insert into public.profiles (id, full_name)
-  values (new.id, coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'))
+  insert into public.profiles (id, full_name, email)
+  values (new.id, coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'), new.email)
   on conflict (id) do nothing;
 
   insert into public.user_preferences (user_id) values (new.id) on conflict do nothing;

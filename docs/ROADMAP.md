@@ -6,7 +6,7 @@ projetos, contatos, chat Gemini com ferramentas, ingestão de canais, briefing, 
 automações + outbox, auditoria, Super Admin básico, OAuth Google pronto para credenciais, PWA, testes, CI, docs.
 
 ## P1 — implementado, pendente de validação externa
-- Conector Evolution e Meta Cloud API (código + testes de contrato; falta host/credenciais).
+- Conector Meta Cloud API (código + testes de contrato; falta credenciais) e Evolution 2.3.7 compartilhada (token da instância + `x-evo-secret`; falta criar a instância, conectar o número e validar em produção).
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (código + testes com motor simulado; falta criar a instância, conectar o número e validar em produção).
 - Sincronização Google (manual incremental; falta push `events.watch`).
 - Áudio pelo painel e WhatsApp (Gemini multimodal).

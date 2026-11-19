@@ -23,7 +23,7 @@ const evoFetch = (async (url: string | URL, init?: RequestInit) => {
   return new Response(JSON.stringify({ key: { id: `OUT-${sent.length}` } }), { status: 201 });
 }) as typeof fetch;
 
-const evolution = new EvolutionProvider({ baseUrl: "https://wa.exemplo.test", apiKey: "k", instance: "gema", webhookSecret: SECRET }, evoFetch);
+const evolution = new EvolutionProvider({ baseUrl: "https://wa.exemplo.test", instanceToken: "k", instance: "gema", webhookSecret: SECRET }, evoFetch);
 
 function evoPayload(id: string, text: string, opts: { fromMe?: boolean; jid?: string } = {}) {
   return JSON.stringify({
@@ -32,7 +32,7 @@ function evoPayload(id: string, text: string, opts: { fromMe?: boolean; jid?: st
     data: { key: { id, remoteJid: opts.jid ?? "5511912345678@s.whatsapp.net", fromMe: opts.fromMe ?? false }, message: { conversation: text }, messageTimestamp: 1795000000 },
   });
 }
-const headers = (secret = SECRET) => new Headers({ "x-gema-webhook-secret": secret });
+const headers = (secret = SECRET) => new Headers({ "x-evo-secret": secret });
 
 beforeAll(async () => {
   pg = await createTestDb();

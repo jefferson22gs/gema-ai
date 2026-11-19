@@ -9,7 +9,7 @@
 5. Supabase Auth → URL Configuration: Site URL = `NEXT_PUBLIC_APP_URL`; Redirect URLs: `<url>/auth/callback`.
 6. Webhooks a cadastrar nos provedores:
    - Meta: `<url>/api/webhooks/meta` (verify token = `META_WEBHOOK_VERIFY_TOKEN`)
-   - Evolution: `<url>/api/webhooks/evolution` com header `x-gema-webhook-secret`
+   - Evolution: `<url>/api/webhooks/evolution` com header `x-evo-secret` (definido por `evo.sh create`; variáveis via `evo.sh push-env`)
    - Whaileys: `<url>/api/webhooks/whaileys` (definido ao criar a instância com `wh.sh create`; variáveis via `wh.sh push-env`)
    - Resend: `<url>/api/webhooks/resend` · Brevo: `<url>/api/webhooks/brevo` (Authorization Bearer)
    - Billing: `<url>/api/webhooks/billing`

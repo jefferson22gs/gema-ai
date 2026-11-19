@@ -8,7 +8,7 @@ Data: 19/11/2026. Documentação consultada localmente (pacotes instalados), sem
 | `@google/genai` 3.6 | Tipos: `parametersJsonSchema`, `functionCalls`, `usageMetadata`, `responseJsonSchema`, `httpOptions.timeout` | Nome de modelo padrão `gemini-flash-latest` — confirmar o alias disponível na conta; preços por token configuráveis |
 | `@supabase/ssr` 0.12 | API `getAll/setAll` | Projeto Supabase com `auth.uid()` lendo `request.jwt.claims` (padrão Supabase) |
 | Conexão direta Postgres | — | Role usada no `DATABASE_URL` precisa poder `set role authenticated` e `service_role` (o usuário `postgres` do Supabase pode) |
-| Evolution API v2 | Não testado | Endpoints `/message/sendText`, `/message/sendButtons`, `/message/sendMedia`, `/chat/getBase64FromMediaMessage`, `/instance/connectionState`, `/instance/logout` e header `apikey` conforme docs públicas da v2; payload `messages.upsert`. Validar contra a versão implantada |
+| Evolution API 2.3.7 (VM compartilhada) | `GET /` respondeu `"version":"2.3.7"` em 20/11/2026; rotas `sendText`, `sendMedia`, `connectionState` e formato do webhook (`x-evo-secret`, `webhookBase64`, `remoteJidAlt`/`senderPn`) conforme a skill `evolution-integration` | Instância do GEMA ainda não criada; envio/recebimento reais não testados (testes com Evolution simulada); `/chat/getBase64FromMediaMessage` só é usado se o webhook vier sem base64 |
 | Meta Cloud API | Não testado | Graph `v21.0` (configurável no código); assinatura `X-Hub-Signature-256` |
 | Resend | Não testado | `POST /emails`, header `Idempotency-Key`, webhooks Svix |
 | Brevo | Não testado | `POST /v3/smtp/email`, header `api-key`; webhook autenticado por Bearer configurado no painel |

@@ -26,11 +26,11 @@ export function googleGateway() {
 
 export function evolutionProvider(): EvolutionProvider | null {
   const baseUrl = env.evolutionApiUrl();
-  const apiKey = env.evolutionApiKey();
+  const instanceToken = env.evolutionInstanceToken();
   const instance = env.evolutionInstance();
   const webhookSecret = env.evolutionWebhookSecret();
-  if (!baseUrl || !apiKey || !instance || !webhookSecret) return null;
-  return new EvolutionProvider({ baseUrl, apiKey, instance, webhookSecret, interactiveEnabled: process.env.EVOLUTION_INTERACTIVE === "true" });
+  if (!baseUrl || !instanceToken || !instance || !webhookSecret) return null;
+  return new EvolutionProvider({ baseUrl, instanceToken, instance, webhookSecret, interactiveEnabled: process.env.EVOLUTION_INTERACTIVE === "true" });
 }
 
 export function metaProvider(): MetaCloudProvider | null {

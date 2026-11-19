@@ -7,7 +7,7 @@ Contrato único `MessagingProvider` (`src/server/messaging/types.ts`): `receive`
 |---|---|---|
 | `MetaCloudProvider` (Cloud API oficial) | Implementado, **pendente de credenciais/teste real** | `GET/POST /api/webhooks/meta` (verify token + `X-Hub-Signature-256`) |
 | `WhaileysProvider` (motor próprio, botões e listas) | Implementado, **pendente de instância criada e teste real** (motor respondendo `health` em 20/11/2026) | `POST /api/webhooks/whaileys` (HMAC `x-whaileys-timestamp` + `x-whaileys-signature`) |
-| `EvolutionProvider` (v2) | Implementado, **pendente de host e teste real** | `POST /api/webhooks/evolution` (header `x-gema-webhook-secret`) |
+| `EvolutionProvider` (v2.3.7, instância própria na Evolution compartilhada) | Implementado, **pendente de instância criada e teste real** (API respondeu 2.3.7 em 20/11/2026) | `POST /api/webhooks/evolution` (header `x-evo-secret`) |
 | Painel (`dashboard`) | Funcional | `/api/ai/chat` |
 
 Saída (verificação de número e notificações): Meta (oficial) > Whaileys > Evolution — o primeiro configurado.

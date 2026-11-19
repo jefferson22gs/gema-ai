@@ -24,7 +24,7 @@ export const env = {
   emailFrom: () => read("EMAIL_FROM"),
   emailPrimaryProvider: (): "resend" | "brevo" => (read("EMAIL_PRIMARY_PROVIDER") === "brevo" ? "brevo" : "resend"),
   evolutionApiUrl: () => read("EVOLUTION_API_URL"),
-  evolutionApiKey: () => read("EVOLUTION_API_KEY"),
+  evolutionInstanceToken: () => read("EVOLUTION_INSTANCE_TOKEN"),
   evolutionInstance: () => read("EVOLUTION_INSTANCE"),
   evolutionWebhookSecret: () => read("EVOLUTION_WEBHOOK_SECRET"),
   metaPhoneNumberId: () => read("META_WABA_PHONE_NUMBER_ID"),
@@ -88,10 +88,10 @@ export function integrationConfig(): IntegrationConfigStatus[] {
     status("brevo", "Brevo", { BREVO_API_KEY: env.brevoApiKey(), EMAIL_FROM: env.emailFrom() }),
     status("evolution", "WhatsApp — Evolution API", {
       EVOLUTION_API_URL: env.evolutionApiUrl(),
-      EVOLUTION_API_KEY: env.evolutionApiKey(),
+      EVOLUTION_INSTANCE_TOKEN: env.evolutionInstanceToken(),
       EVOLUTION_INSTANCE: env.evolutionInstance(),
       EVOLUTION_WEBHOOK_SECRET: env.evolutionWebhookSecret(),
-    }, "Requer host persistente externo (Docker). Não roda na Vercel."),
+    }, "Instância própria na Evolution compartilhada (token da instância, não a chave global). Não roda na Vercel."),
     status("meta_cloud", "WhatsApp — Cloud API (Meta)", {
       META_WABA_PHONE_NUMBER_ID: env.metaPhoneNumberId(),
       META_WHATSAPP_ACCESS_TOKEN: env.metaAccessToken(),

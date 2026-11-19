@@ -3,19 +3,36 @@ import { buttonsAsText, jidToE164, type InboundMessage, type MessagingProvider, 
 
 export interface EvolutionConfig {
   baseUrl: string;
-  apiKey: string;
+  /** Token da PRÓPRIA instância (não a chave global): a Evolution o aceita só para esta instância. */
+  instanceToken: string;
   instance: string;
   webhookSecret: string;
-  /** Botões nativos dependem da versão/conta; desativado por padrão (fallback textual). */
+  /** Botões nativos dependem da versão/conta; desativado por padrão (fallback textual). Para botões, usar Whaileys. */
   interactiveEnabled?: boolean;
 }
 
 type FetchLike = typeof fetch;
 
+interface EvolutionMessageData {
+  key?: { id?: string; remoteJid?: string; fromMe?: boolean; remoteJidAlt?: string; senderPn?: string };
+  message?: Record<string, unknown> & { base64?: string };
+  messageType?: string;
+  messageTimestamp?: number;
+}
+
+/** Remetente em E.164: `remoteJid` de telefone; se for `@lid`, usa `remoteJidAlt`/`senderPn`. */
+export function evolutionSender(key: EvolutionMessageData["key"]): string | null {
+  const jid = key?.remoteJid ?? "";
+  if (jid.endsWith("@s.whatsapp.net")) return jidToE164(jid);
+  const alt = key?.remoteJidAlt ?? key?.senderPn;
+  return alt ? jidToE164(alt) : null;
+}
+
 /**
- * Adaptador Evolution API (v2). Endpoints conforme documentação pública da Evolution API v2
- * (ver docs/ASSUMPTIONS.md — validar contra a versão efetivamente implantada).
- * A sessão WhatsApp roda no host persistente (infra/evolution), NUNCA na Vercel.
+ * Adaptador Evolution API v2 (validado contra a 2.3.7 da VM compartilhada: rotas e formato do webhook).
+ * Webhook autenticado pelo header `x-evo-secret` (a Evolution não assina o corpo); o campo `apikey`
+ * do corpo é ignorado. Mídia chega em base64 no próprio webhook (`webhookBase64: true`).
+ * A sessão WhatsApp roda em host persistente, NUNCA na Vercel.
  */
 export class EvolutionProvider implements MessagingProvider {
   readonly name = "evolution" as const;
@@ -32,7 +49,7 @@ export class EvolutionProvider implements MessagingProvider {
     try {
       const res = await this.fetchImpl(this.url(path), {
         method,
-        headers: { apikey: this.cfg.apiKey, "content-type": "application/json" },
+        headers: { apikey: this.cfg.instanceToken, "content-type": "application/json" },
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
       });
@@ -49,9 +66,9 @@ export class EvolutionProvider implements MessagingProvider {
   }
 
   async receive(rawBody: string, headers: Headers): Promise<ReceiveResult> {
-    // Segredo enviado pela Evolution via header customizado configurado no webhook da instância.
-    const check = verifySharedSecret(headers.get("x-gema-webhook-secret") ?? headers.get("apikey"), this.cfg.webhookSecret);
-    if (!check.ok) return { verified: false, reason: check.reason, events: [] };
+    // Segredo configurado no webhook da instância (header x-evo-secret). Sem segredo no servidor, nunca aceita.
+    const check = verifySharedSecret(headers.get("x-evo-secret"), this.cfg.webhookSecret);
+    if (!this.cfg.webhookSecret || !check.ok) return { verified: false, reason: check.ok ? "segredo não configurado" : check.reason, events: [] };
 
     let payload: Record<string, unknown>;
     try {
@@ -59,40 +76,42 @@ export class EvolutionProvider implements MessagingProvider {
     } catch {
       return { verified: true, reason: "json inválido", events: [] };
     }
-    if (payload.instance && payload.instance !== this.cfg.instance) return { verified: true, reason: "instância diferente", events: [] };
+    // O campo `apikey` do corpo é deliberadamente ignorado (nunca usado nem registrado).
+    if (payload.instance !== this.cfg.instance) return { verified: true, reason: "instância diferente", events: [] };
     const event = String(payload.event ?? "").toLowerCase().replace("_", ".");
     if (event !== "messages.upsert") return { verified: true, reason: `evento ignorado: ${event}`, events: [] };
 
     const items = Array.isArray(payload.data) ? payload.data : [payload.data];
     const events: InboundMessage[] = [];
     for (const raw of items) {
-      const d = raw as {
-        key?: { id?: string; remoteJid?: string; fromMe?: boolean };
-        message?: Record<string, unknown>;
-        messageType?: string;
-        messageTimestamp?: number;
-      };
+      const d = raw as EvolutionMessageData;
       const id = d?.key?.id;
       const jid = d?.key?.remoteJid ?? "";
       if (!id || !jid || jid.endsWith("@g.us") || jid === "status@broadcast") continue; // ignora grupos e status
-      const from = jidToE164(jid);
+      const from = evolutionSender(d.key);
       if (!from) continue;
       const m = d.message ?? {};
+      const image = m.imageMessage as { mimetype?: string; caption?: string } | undefined;
+      const audio = m.audioMessage as { mimetype?: string } | undefined;
+      const document = m.documentMessage as { mimetype?: string; caption?: string } | undefined;
       const text =
         (m.conversation as string | undefined) ??
         ((m.extendedTextMessage as { text?: string } | undefined)?.text) ??
-        ((m.buttonsResponseMessage as { selectedDisplayText?: string } | undefined)?.selectedDisplayText) ??
-        ((m.listResponseMessage as { title?: string } | undefined)?.title);
-      const audio = m.audioMessage as { mimetype?: string } | undefined;
-      const image = m.imageMessage as { mimetype?: string; caption?: string } | undefined;
+        ((m.buttonsResponseMessage as { selectedButtonId?: string; selectedDisplayText?: string } | undefined)?.selectedButtonId) ??
+        ((m.listResponseMessage as { singleSelectReply?: { selectedRowId?: string } } | undefined)?.singleSelectReply?.selectedRowId) ??
+        image?.caption ??
+        document?.caption;
+      const mediaMime = (audio ?? image)?.mimetype?.split(";")[0];
       events.push({
         provider: "evolution",
         providerMessageId: id,
         from,
         fromMe: Boolean(d.key?.fromMe),
         type: audio ? "audio" : image ? "image" : text ? "text" : "other",
-        text: text ?? image?.caption,
-        mediaRef: audio || image ? { id, mimeType: (audio ?? image)?.mimetype } : undefined,
+        text,
+        mediaRef: audio || image ? { id, mimeType: mediaMime } : undefined,
+        // Com webhookBase64 a mídia já vem no evento; sem ela, downloadMedia busca na API.
+        inlineMedia: (audio || image) && typeof m.base64 === "string" && mediaMime ? { mimeType: mediaMime, base64: m.base64 } : undefined,
         timestamp: d.messageTimestamp ? new Date(Number(d.messageTimestamp) * 1000) : new Date(),
       });
     }
@@ -103,7 +122,8 @@ export class EvolutionProvider implements MessagingProvider {
     try {
       const { status, json } = await this.call("POST", "/message/sendText", { number: to.replace(/^\+/, ""), text });
       const key = json.key as { id?: string } | undefined;
-      return status < 300 ? { ok: true, providerMessageId: key?.id } : { ok: false, error: `HTTP ${status}` };
+      if (status < 300) return { ok: true, providerMessageId: key?.id };
+      return { ok: false, error: status === 401 ? "Token da instância inválido." : `HTTP ${status}` };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : "erro de rede" };
     }
@@ -142,6 +162,7 @@ export class EvolutionProvider implements MessagingProvider {
   }
 
   async downloadMedia(msg: InboundMessage): Promise<{ base64: string; mimeType: string } | null> {
+    if (msg.inlineMedia) return msg.inlineMedia;
     try {
       const { status, json } = await this.call("POST", "/chat/getBase64FromMediaMessage", { message: { key: { id: msg.providerMessageId } }, convertToMp4: false });
       if (status >= 300 || typeof json.base64 !== "string") return null;

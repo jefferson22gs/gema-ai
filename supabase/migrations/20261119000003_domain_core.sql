@@ -6,7 +6,7 @@
 create table public.contacts (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   name text not null check (char_length(name) between 1 and 160),
   phone_e164 text check (phone_e164 is null or phone_e164 ~ '^\+[1-9][0-9]{7,14}$'),
@@ -29,7 +29,7 @@ create unique index contacts_google_uidx on public.contacts (workspace_id, googl
 create table public.calendar_events (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   title text not null check (char_length(title) between 1 and 200),
   description text,
@@ -75,7 +75,7 @@ create table public.calendar_sync_state (
 create table public.financial_accounts (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   name text not null check (char_length(name) between 1 and 80),
   kind text not null default 'checking' check (kind in ('checking', 'savings', 'credit_card', 'cash', 'investment', 'other')),
@@ -104,7 +104,7 @@ create unique index categories_ws_slug_uidx on public.categories (workspace_id, 
 create table public.recurring_transactions (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   kind text not null check (kind in ('expense', 'income')),
   description text not null,
@@ -124,7 +124,7 @@ create index recurring_transactions_ws_idx on public.recurring_transactions (wor
 create table public.transactions (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   kind text not null check (kind in ('expense', 'income')),
   description text not null check (char_length(description) between 1 and 200),
@@ -158,7 +158,7 @@ create index transactions_ws_due_idx on public.transactions (workspace_id, due_o
 create table public.budgets (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   category_id uuid not null references public.categories (id),
   month date not null check (extract(day from month) = 1),
@@ -171,7 +171,7 @@ create table public.budgets (
 create table public.task_lists (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   name text not null check (char_length(name) between 1 and 80),
   created_at timestamptz not null default now(),
@@ -181,7 +181,7 @@ create table public.task_lists (
 create table public.projects (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'workspace' check (visibility in ('private', 'workspace')),
   name text not null check (char_length(name) between 1 and 120),
   description text,
@@ -195,9 +195,9 @@ create index projects_ws_idx on public.projects (workspace_id, status);
 create table public.tasks (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
-  assignee_id uuid references auth.users (id),
+  assignee_id uuid references auth.users (id) on delete set null,
   list_id uuid references public.task_lists (id) on delete set null,
   project_id uuid references public.projects (id) on delete set null,
   contact_id uuid references public.contacts (id) on delete set null,
@@ -221,7 +221,7 @@ create index tasks_ws_open_idx on public.tasks (workspace_id, due_at) where comp
 create table public.reminders (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  owner_id uuid not null default auth.uid() references auth.users (id),
+  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   visibility text not null default 'private' check (visibility in ('private', 'workspace')),
   title text not null check (char_length(title) between 1 and 200),
   remind_at timestamptz not null,

@@ -35,7 +35,8 @@ create table public.workspaces (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(name) between 1 and 80),
   kind text not null check (kind in ('personal', 'family', 'business')),
-  created_by uuid not null references auth.users (id),
+  -- set null: workspace compartilhado sobrevive à exclusão de quem o criou (se houver outro owner).
+  created_by uuid references auth.users (id) on delete set null,
   plan_id text not null default 'essential' references public.plans (id),
   timezone text not null default 'America/Sao_Paulo',
   currency text not null default 'BRL',
@@ -65,7 +66,7 @@ create table public.workspace_invitations (
   email text not null,
   role text not null check (role in ('admin', 'member', 'viewer')),
   token_hash text not null unique,
-  invited_by uuid not null references auth.users (id),
+  invited_by uuid not null references auth.users (id) on delete cascade,
   expires_at timestamptz not null,
   accepted_at timestamptz,
   created_at timestamptz not null default now()
@@ -228,7 +229,7 @@ create table public.feature_flags (
 create table public.support_cases (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null references public.workspaces (id) on delete cascade,
-  opened_by uuid not null references auth.users (id),
+  opened_by uuid not null references auth.users (id) on delete cascade,
   subject text not null check (char_length(subject) between 3 and 160),
   body text not null check (char_length(body) <= 5000),
   status text not null default 'open' check (status in ('open', 'in_progress', 'resolved', 'closed')),

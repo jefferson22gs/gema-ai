@@ -18,8 +18,12 @@
 .DS_Store
 *.pem
 
-# debug
+# debug / saídas locais de ferramentas
 npm-debug.log*
+.build-out.txt
+.lint-out.txt
+.test-out.txt
+.e2e-out.txt
 
 # env files — nunca versionar segredos
 .env*

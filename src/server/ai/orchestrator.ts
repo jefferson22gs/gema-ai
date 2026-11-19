@@ -160,11 +160,14 @@ export async function handleUserMessage(deps: OrchestratorDeps, msg: IncomingUse
     return { conversationId: stored.conversationId, reply: limit, outcomes: [], duplicate: false };
   }
 
+  // Memória consentida: histórico só entra no contexto se o titular habilitou (user_preferences.memory_enabled).
   const history = await db.asUser(ctx.userId, (q) =>
     q.query<{ role: string; content: string }>(
-      `select role, content from messages where conversation_id = $1 and id <> $2 and role in ('user', 'assistant')
+      `select role, content from messages
+       where conversation_id = $1 and id <> $2 and role in ('user', 'assistant')
+         and coalesce((select memory_enabled from user_preferences where user_id = $3), false)
        order by created_at desc limit 8`,
-      [stored.conversationId, stored.messageId],
+      [stored.conversationId, stored.messageId, ctx.userId],
     ),
   );
 

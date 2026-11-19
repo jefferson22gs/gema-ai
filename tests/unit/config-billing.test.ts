@@ -12,10 +12,10 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("integrações sem credenciais (feature flags por ambiente)", () => {
   it("todas aparecem como não configuradas e não derrubam o app", () => {
-    for (const k of ["GEMINI_API_KEY", "RESEND_API_KEY", "BREVO_API_KEY", "EVOLUTION_API_URL", "GOOGLE_CLIENT_ID", "BILLING_PROVIDER"]) vi.stubEnv(k, "");
+    for (const k of ["GEMINI_API_KEY", "RESEND_API_KEY", "BREVO_API_KEY", "EVOLUTION_API_URL", "GOOGLE_CLIENT_ID", "BILLING_PROVIDER", "WHAILEYS_TOKEN"]) vi.stubEnv(k, "");
     const cfg = integrationConfig();
     expect(cfg.every((i) => i.key === "supabase" || !i.configured)).toBe(true);
-    expect(cfg.find((i) => i.key === "baileys_whaileys")?.note).toMatch(/sem código verificável/);
+    expect(cfg.find((i) => i.key === "baileys_whaileys")?.missing).toContain("WHAILEYS_TOKEN");
     expect(getDefaultModel()).toBeNull();
     expect(billingProvider().name).toBe("none");
   });

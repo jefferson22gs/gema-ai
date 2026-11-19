@@ -13,7 +13,7 @@ Data: 19/11/2026. Documentação consultada localmente (pacotes instalados), sem
 | Resend | Não testado | `POST /emails`, header `Idempotency-Key`, webhooks Svix |
 | Brevo | Não testado | `POST /v3/smtp/email`, header `api-key`; webhook autenticado por Bearer configurado no painel |
 | Google | Não testado | Endpoints Calendar v3 / People v1 e OAuth padrão; app precisa de verificação para escopos sensíveis |
-| Baileys/Whaileys | Repositório vazio | Apenas contrato/stub |
+| Whaileys (motor próprio) | `GET /health` respondeu `ok` em 20/11/2026; API e formato do webhook conforme a skill `whaileys-integration` | Instância do GEMA ainda não criada; envio/recebimento reais não testados (testes com motor simulado) |
 | AgendaFácil365 | Código não lido | Apenas contrato proposto |
 | Preços dos planos | — | Valores de exemplo para validação comercial |
 | Billing | — | Nenhum provedor escolhido; envelope genérico assinado |

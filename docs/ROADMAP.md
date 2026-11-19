@@ -7,6 +7,7 @@ automações + outbox, auditoria, Super Admin básico, OAuth Google pronto para 
 
 ## P1 — implementado, pendente de validação externa
 - Conector Evolution e Meta Cloud API (código + testes de contrato; falta host/credenciais).
+- Canal Whaileys com botões ✅ Confirmar/Cancelar (código + testes com motor simulado; falta criar a instância, conectar o número e validar em produção).
 - Sincronização Google (manual incremental; falta push `events.watch`).
 - Áudio pelo painel e WhatsApp (Gemini multimodal).
 - Extração de comprovantes com revisão.

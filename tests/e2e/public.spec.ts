@@ -58,7 +58,7 @@ test.describe("estados não configurados", () => {
   });
 
   test("webhooks sem configuração recusam processamento", async ({ request }) => {
-    for (const p of ["/api/webhooks/evolution", "/api/webhooks/meta", "/api/webhooks/resend", "/api/webhooks/brevo"]) {
+    for (const p of ["/api/webhooks/evolution", "/api/webhooks/meta", "/api/webhooks/resend", "/api/webhooks/brevo", "/api/webhooks/whaileys"]) {
       const res = await request.post(p, { data: { event: "messages.upsert" } });
       expect(res.status(), p).toBe(503);
     }

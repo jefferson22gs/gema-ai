@@ -10,6 +10,7 @@
 6. Webhooks a cadastrar nos provedores:
    - Meta: `<url>/api/webhooks/meta` (verify token = `META_WEBHOOK_VERIFY_TOKEN`)
    - Evolution: `<url>/api/webhooks/evolution` com header `x-gema-webhook-secret`
+   - Whaileys: `<url>/api/webhooks/whaileys` (definido ao criar a instância com `wh.sh create`; variáveis via `wh.sh push-env`)
    - Resend: `<url>/api/webhooks/resend` · Brevo: `<url>/api/webhooks/brevo` (Authorization Bearer)
    - Billing: `<url>/api/webhooks/billing`
 7. Verificar `GET /api/health` após o deploy.

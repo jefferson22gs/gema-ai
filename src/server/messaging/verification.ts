@@ -36,6 +36,8 @@ export async function startPhoneVerification(
       [workspaceId, userId, deps.provider.name, phone, sha256Hex(`${phone}:${code}`), CODE_TTL_MINUTES],
     );
   });
+  // Permite ao provedor associar respostas identificadas só por LID a este número.
+  await deps.provider.registerKnownPhones?.([phone]);
   const sent = await deps.provider.sendText(phone, `GEMA AI: seu código de verificação é ${code}. Ele expira em ${CODE_TTL_MINUTES} minutos. Se não foi você, ignore.`);
   return sent.ok ? { sent: true } : { sent: false, error: sent.error ?? "falha no envio" };
 }

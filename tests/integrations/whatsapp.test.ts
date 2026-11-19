@@ -4,7 +4,6 @@ import type { Database } from "@/lib/db/types";
 import { hmacSha256Base64, hmacSha256Hex } from "@/lib/crypto";
 import { EvolutionProvider } from "@/server/messaging/evolution";
 import { MetaCloudProvider } from "@/server/messaging/meta";
-import { BaileysWhaileysProvider } from "@/server/messaging/baileys";
 import { ingestWebhook } from "@/server/messaging/ingest";
 import { confirmPhoneVerification, startPhoneVerification } from "@/server/messaging/verification";
 import { verifySvixSignature, verifyTimestampedHmac } from "@/server/webhooks/verify";
@@ -98,7 +97,9 @@ describe("webhook Evolution (critérios 3 e 8)", () => {
   it("confirmação por texto executa ação pendente", async () => {
     const contactModel = new ScriptedModel(() => ({ functionCalls: [{ name: "create_contact", args: { name: "Carlos", phone: "+55 21 98888-1111" } }] }));
     const ask = await ingestWebhook({ db, provider: evolution, model: contactModel, google: null }, evoPayload("WA-200", "grave o contato Carlos"), headers());
-    expect(ask.replies[0].text).toContain("Confirmar");
+    expect(ask.replies[0].text).toContain("Confirma?");
+    // Evolution sem botões nativos: opções numeradas no texto efetivamente enviado.
+    expect(String(sent.at(-1)!.body.text)).toMatch(/1\) ✅ Confirmar\n2\) Cancelar/);
     const yes = await ingestWebhook({ db, provider: evolution, model: contactModel, google: null }, evoPayload("WA-201", "1"), headers());
     expect(yes.replies[0].text).toContain("Contato salvo: Carlos");
   });
@@ -114,14 +115,6 @@ describe("Meta Cloud API", () => {
     expect(ok.events[0]).toMatchObject({ provider: "meta_cloud", providerMessageId: "wamid.1", from: PHONE, text: "oi" });
     const bad = await meta.receive(body, new Headers({ "x-hub-signature-256": "sha256=deadbeef" }));
     expect(bad.verified).toBe(false);
-  });
-});
-
-describe("Baileys/Whaileys", () => {
-  it("é stub de contrato e nunca alega envio", async () => {
-    const p = new BaileysWhaileysProvider();
-    expect((await p.sendText()).ok).toBe(false);
-    expect((await p.health()).status).toBe("not_configured");
   });
 });
 

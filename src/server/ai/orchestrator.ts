@@ -14,7 +14,7 @@ export interface IncomingUserMessage {
   media?: { mimeType: string; base64: string };
   /** Id do provedor (WhatsApp) ou id gerado pelo cliente (painel) — base de dedupe/idempotência. */
   providerMessageId: string;
-  provider: "dashboard" | "evolution" | "meta_cloud";
+  provider: "dashboard" | "evolution" | "meta_cloud" | "baileys_whaileys";
   conversationId?: string;
 }
 

@@ -65,7 +65,7 @@ src/app/super-admin   administração da plataforma (metadados agregados, audita
 src/app/api           health, chat IA, webhooks, OAuth, cron, documentos, exportação
 src/server/ai         registry de ferramentas (Zod), executor com estados, orquestrador Gemini
 src/server/services   domínio: finanças, agenda, tarefas, contatos, lembretes, briefing, documentos
-src/server/messaging  MessagingProvider (Evolution, Meta, stub Baileys/Whaileys) e ingestão
+src/server/messaging  MessagingProvider (Meta, Whaileys, Evolution) e ingestão
 src/server/email      EmailProvider (Resend, Brevo), templates PT-BR, fallback seguro
 src/server/integrations/google  OAuth (PKCE/state), gateway Calendar/People, sync incremental
 src/server/automations          motor de automações por ocorrência

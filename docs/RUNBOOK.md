@@ -8,6 +8,7 @@
 | Assistente responde "Não configurado" | `GEMINI_API_KEY` | Definir e redeploy |
 | Assistente "indisponível (limite de custo)" | Super Admin → custo Gemini do mês | Avaliar uso; ajustar `GEMINI_MAX_MONTHLY_USD` |
 | WhatsApp sem resposta | Super Admin → Canais / Monitoramento | Instância desconectada ⇒ reparear QR no host; 401 em massa ⇒ segredo divergente |
+| Whaileys desconectado | Super Admin → Canais; `wh.sh status <instância>` | `wh.sh connect <instância>` (QR) ou com telefone (código de 8 dígitos); segredo divergente ⇒ `wh.sh rotate <instância> secret` e atualizar a Vercel |
 | Lembretes/automações não chegam | Super Admin → Automações; `automation_runs` com `failed/dead`; `notification_outbox` `dead` | Ver `last_error`; cron rodando? (`CRON_SECRET`) |
 | E-mails `ambiguous` | Super Admin → E-mails | Conferir no painel do provedor antes de qualquer reenvio manual |
 | Google "erro" | `integrations.last_error` | Usuário reconecta; `invalid_grant` = revogado no Google |

@@ -15,6 +15,8 @@ export interface InboundMessage {
   text?: string;
   /** Referência de mídia específica do provedor (baixada somente se necessário). */
   mediaRef?: { id: string; mimeType?: string };
+  /** Mídia já entregue no próprio webhook (ex.: Whaileys), dispensando download. */
+  inlineMedia?: { mimeType: string; base64: string };
   timestamp: Date;
 }
 
@@ -53,6 +55,8 @@ export interface MessagingProvider {
   /** Baixa mídia recebida (áudio/imagem) em base64, quando suportado. */
   downloadMedia?(msg: InboundMessage): Promise<{ base64: string; mimeType: string } | null>;
   ack(msg: InboundMessage): Promise<void>;
+  /** Informa números esperados ao provedor (resolve remetentes identificados só por LID). */
+  registerKnownPhones?(phonesE164: string[]): Promise<void>;
   health(): Promise<ProviderHealth>;
   disconnect(): Promise<void>;
 }

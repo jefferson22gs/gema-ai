@@ -7,6 +7,7 @@ import type { GoogleOAuthConfig } from "./integrations/google/oauth";
 import { EvolutionProvider } from "./messaging/evolution";
 import { MetaCloudProvider } from "./messaging/meta";
 import type { MessagingProvider } from "./messaging/types";
+import { WhaileysProvider } from "./messaging/whaileys";
 
 /** Composição das dependências reais de produção (cada uma null quando não configurada). */
 export function googleConfig(): GoogleOAuthConfig | null {
@@ -40,9 +41,21 @@ export function metaProvider(): MetaCloudProvider | null {
   return new MetaCloudProvider({ phoneNumberId, accessToken, appSecret });
 }
 
-/** Canal WhatsApp preferencial para saída: Meta Cloud API (oficial) se configurada, senão Evolution. */
+export function whaileysProvider(): WhaileysProvider | null {
+  const apiUrl = env.whaileysApiUrl();
+  const instance = env.whaileysInstance();
+  const token = env.whaileysToken();
+  const webhookSecret = env.whaileysWebhookSecret();
+  if (!apiUrl || !instance || !token || !webhookSecret) return null;
+  return new WhaileysProvider({ apiUrl, instance, token, webhookSecret });
+}
+
+/**
+ * Canal WhatsApp para saída. Ordem: Meta Cloud API (oficial) > Whaileys > Evolution.
+ * Cada número verificado fica vinculado ao provedor que enviou o código (channel_accounts.provider).
+ */
 export function primaryWhatsApp(): MessagingProvider | null {
-  return metaProvider() ?? evolutionProvider();
+  return metaProvider() ?? whaileysProvider() ?? evolutionProvider();
 }
 
 export function aiModel() {

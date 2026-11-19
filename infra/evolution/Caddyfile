@@ -1,0 +1,12 @@
+{$WA_DOMAIN} {
+	encode gzip
+	# Painel/manager da Evolution não deve ficar público: restrinja por IP ou Cloudflare Access.
+	@manager path /manager*
+	respond @manager 403
+	reverse_proxy evolution:8080
+	header {
+		Strict-Transport-Security "max-age=63072000"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}

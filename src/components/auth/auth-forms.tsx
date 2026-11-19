@@ -62,7 +62,7 @@ export function SignUpForm({ googleEnabled, configured }: { googleEnabled: boole
         <Feedback state={state} />
         <Button type="submit" className="w-full" disabled={pending || !configured}>{pending ? "Criando…" : "Criar conta"}</Button>
       </form>
-      <p className="text-center text-sm text-muted">Já tem conta? <Link href="/entrar" className="text-gold hover:underline">Entrar</Link></p>
+      <p className="text-center text-sm text-muted">Já tem conta? <Link href="/entrar" className="text-gold underline underline-offset-2">Entrar</Link></p>
     </div>
   );
 }

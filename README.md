@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GEMA AI — Assessor Executivo Inteligente
 
-## Getting Started
+SaaS multi-tenant (B2C/B2B), mobile-first, com painel web, PWA e WhatsApp, que organiza agenda,
+finanças, tarefas, contatos, documentos e briefings por comandos em linguagem natural (Gemini).
 
-First, run the development server:
+> Nome de trabalho, sujeito a confirmação de marca e domínio.
+
+## Stack
+
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript strict · Tailwind v4 · Zod ·
+Supabase (Postgres, Auth, Storage, RLS) · Gemini API (`@google/genai`) · Resend + Brevo ·
+WhatsApp (Cloud API Meta / Evolution API em host externo) · Google Calendar/People · Vercel · Cloudflare.
+
+## Rodando localmente
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+cp .env.example .env.local     # preencha o que tiver; o resto aparece como "Não configurado"
+npm run dev                    # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sem Supabase, o site público funciona e o painel mostra a instrução de configuração (sem dados falsos).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Banco de dados
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx supabase link --project-ref <ref>
+npx supabase db push           # aplica supabase/migrations/*.sql
+```
 
-## Learn More
+`DATABASE_URL` deve apontar para o pooler do Supabase (modo transaction, porta 6543). O servidor
+executa cada consulta de usuário com `set local role authenticated` + claims JWT — a RLS é aplicada
+no banco, não só no código.
 
-To learn more about Next.js, take a look at the following resources:
+Para tornar alguém Super Admin (SQL Editor do Supabase):
+```sql
+insert into public.platform_admins (user_id) values ('<uuid do usuário>');
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Dados de demonstração (rotulados `[DEMO]`, bloqueados em produção):
+```bash
+ALLOW_DEMO_SEED=true DATABASE_URL=... npm run db:seed:demo -- voce@exemplo.com
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Comandos
 
-## Deploy on Vercel
+| Comando | O que faz |
+|---|---|
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Gera tipos de rotas e roda `tsc --noEmit` |
+| `npm test` | Vitest: unitários, integrações (mocks de contrato) e RLS em Postgres real (PGlite) |
+| `npm run build` | Build de produção (não exige nenhuma chave) |
+| `npm run test:e2e` | Playwright desktop + mobile, acessibilidade (axe) e PWA — requer `npm run build` antes |
+| `npm run icons` | Regenera os ícones do PWA |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Localmente com Chrome instalado: `PW_CHANNEL=chrome npm run test:e2e`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estrutura
+
+```
+src/app/(site)        site público e SEO
+src/app/(auth)        login, cadastro, recuperação (Server Actions)
+src/app/app           painel autenticado (/app/*)
+src/app/super-admin   administração da plataforma (metadados agregados, auditado)
+src/app/api           health, chat IA, webhooks, OAuth, cron, documentos, exportação
+src/server/ai         registry de ferramentas (Zod), executor com estados, orquestrador Gemini
+src/server/services   domínio: finanças, agenda, tarefas, contatos, lembretes, briefing, documentos
+src/server/messaging  MessagingProvider (Evolution, Meta, stub Baileys/Whaileys) e ingestão
+src/server/email      EmailProvider (Resend, Brevo), templates PT-BR, fallback seguro
+src/server/integrations/google  OAuth (PKCE/state), gateway Calendar/People, sync incremental
+src/server/automations          motor de automações por ocorrência
+src/server/notifications        outbox, entrega multicanal, quiet hours, push
+supabase/migrations   schema, RLS, storage, dados de referência
+infra/evolution       Docker Compose do host persistente do WhatsApp
+tests/                db (RLS), ai, integrations, unit, e2e
+docs/                 arquitetura, segurança, integrações, deploy, runbook, relatório de testes
+```
+
+## Documentação
+
+Comece por [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+Estado real de cada integração: [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).

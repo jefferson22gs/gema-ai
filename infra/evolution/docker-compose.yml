@@ -1,0 +1,85 @@
+# GEMA AI — host persistente da Evolution API (sessões WhatsApp, QR, sockets).
+# Roda em VPS/serviço de contêiner separado, atrás de wa.<dominio> no Cloudflare. NUNCA na Vercel.
+# Valide a tag da imagem contra a versão homologada antes de subir (ver docs/EVOLUTION_DOCKER.md).
+name: gema-evolution
+
+services:
+  evolution:
+    image: ${EVOLUTION_IMAGE:-evoapicloud/evolution-api:v2.3.0}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SERVER_URL: https://${WA_DOMAIN}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:${EVOLUTION_DB_PASSWORD}@postgres:5432/evolution?schema=public
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/6
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      # Webhook global para o GEMA AI, com segredo em header (validado em /api/webhooks/evolution).
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      WEBHOOK_GLOBAL_URL: ${GEMA_WEBHOOK_URL}
+      WEBHOOK_EVENTS_MESSAGES_UPSERT: "true"
+      WEBHOOK_EVENTS_CONNECTION_UPDATE: "true"
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD}
+      POSTGRES_DB: evolution
+    volumes:
+      - evolution_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution"]
+      interval: 10s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - evolution_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 10
+    networks: [internal]
+
+  # Reverse proxy com TLS (origem). Cloudflare em modo "Full (strict)" na frente.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      WA_DOMAIN: ${WA_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [evolution]
+    networks: [internal]
+
+volumes:
+  evolution_instances:
+  evolution_pg:
+  evolution_redis:
+  caddy_data:
+
+networks:
+  internal:

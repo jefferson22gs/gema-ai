@@ -49,6 +49,10 @@
   ids estáveis (FITID ou hash), reimportação e períodos sobrepostos sem duplicar, Latin-1 aceito, linhas inválidas listadas.
 - Regras de categorização aprendidas: ao corrigir a categoria em Lançamentos com "lembrar", a regra passa a valer para
   importações e novos lançamentos do mesmo estabelecimento (respeita despesa/receita; regras excluíveis).
+- Relatório mensal (`/app/financas/relatorios`) com exportação PDF, XLSX e CSV gerados sem dependências externas,
+  sob RLS e permissão `reports.export`, auditado.
+- **Segurança**: exportação CSV de lançamentos não protegia contra fórmulas (`=`, `+`, `-`, `@`); agora neutraliza, e o
+  XLSX grava texto sempre como texto.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

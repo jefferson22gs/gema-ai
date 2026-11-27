@@ -57,7 +57,7 @@
 | FIN-10 | Regras | Regras de categorização do usuário (aprendidas de correções) | P1 | — | Correção vira regra opcional; teste | Testada | tests/db/statement-import.test.ts (regra aprendida na correção, aplicada em importação e lançamento manual, tipo respeitado, isolada por workspace); seletor em Lançamentos | — | — |
 | FIN-11 | Importação | Importar CSV/OFX com deduplicação | P1 | FIN-04 | OFX/CSV reimportado não duplica; teste | Testada | tests/unit/statement-import.test.ts (28: OFX SGML/XML, CSV BR, débito/crédito, ids estáveis), tests/db/statement-import.test.ts (prévia, idempotência, sobreposição, isolamento); /app/financas/importar | — | — |
 | FIN-12 | Dashboard | Dashboard financeiro avançado com gráficos, filtros e modo privacidade | P0 | FIN-03 | Gráficos com dados reais; ocultar valores | Implementada | Telas `/app/financas/cartoes`, `/fluxo` (gráfico de saldo projetado + saúde + recorrências), `/planejamento` (metas e dívidas). E2E autenticado pendente (BLK-01) | — | — |
-| FIN-13 | Relatórios | PDF/XLSX + proteção CSV injection | P1 | — | Exportação sem fórmula executável; teste | Pendente | — | — | — |
+| FIN-13 | Relatórios | PDF/XLSX + proteção CSV injection | P1 | — | Exportação sem fórmula executável; teste | Testada | tests/unit/report-formats.test.ts (CSV injection, XLSX sem <f>, PDF xref/paginação/WinAnsi), tests/db/monthly-report.test.ts (regras de soma, RLS, permissão reports.export); XLSX validado com openpyxl e PDF renderizado com PyMuPDF; /app/financas/relatorios | — | — |
 | PAT-01 | Patrimônio | Ativos, passivos, snapshots, patrimônio líquido | P1 | — | Cálculo testado | Pendente | — | — | — |
 
 ## Fase 5 — Open Finance

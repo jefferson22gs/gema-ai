@@ -9,6 +9,7 @@ const tabs = [
   { href: "/app/financas/fluxo", label: "Fluxo de caixa" },
   { href: "/app/financas/orcamentos", label: "Orçamentos" },
   { href: "/app/financas/planejamento", label: "Metas e dívidas" },
+  { href: "/app/financas/relatorios", label: "Relatórios" },
 ];
 
 export default function FinancasLayout({ children }: LayoutProps<"/app/financas">) {

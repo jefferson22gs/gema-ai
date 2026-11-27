@@ -13,7 +13,7 @@ export async function GET() {
     await auditAsUser(q, { workspaceId: ctx.workspaceId, action: "transactions.exported", metadata: { rows: rows.length } });
     return transactionsToCsv(rows);
   });
-  return new Response(`﻿${csv}`, {
+  return new Response(csv, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": `attachment; filename="lancamentos-${new Date().toISOString().slice(0, 10)}.csv"`,

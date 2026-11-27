@@ -1,6 +1,7 @@
 import { monthRange, addDaysToDateString, localDateString } from "@/lib/time";
 import { DomainError, type ServiceDeps } from "../context";
 import { categorize } from "../finance/statement-import";
+import { toCsv } from "../reports/formats";
 import { loadRules } from "./statement-import";
 
 export type TxKind = "expense" | "income";
@@ -240,12 +241,11 @@ export async function upsertBudget(deps: ServiceDeps, categoryId: string, limitC
   );
 }
 
+/** CSV com neutralização de fórmulas (descrição/categoria vêm do usuário, de bancos e da IA). */
 export function transactionsToCsv(rows: TransactionRow[]): string {
-  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-  const header = "data;tipo;descricao;categoria;valor;status;vencimento";
-  const lines = rows.map((r) =>
-    [r.occurred_on, r.kind === "expense" ? "despesa" : "receita", esc(r.description), esc(r.category_name ?? ""),
-      (r.amount_cents / 100).toFixed(2).replace(".", ","), r.status === "paid" ? "pago" : "pendente", r.due_on ?? ""].join(";"),
+  return toCsv(
+    ["data", "tipo", "descricao", "categoria", "valor", "status", "vencimento"],
+    rows.map((r) => [String(r.occurred_on).slice(0, 10), r.kind === "expense" ? "despesa" : "receita", r.description, r.category_name ?? "",
+      Number(r.amount_cents) / 100, r.status === "paid" ? "pago" : "pendente", r.due_on ? String(r.due_on).slice(0, 10) : ""]),
   );
-  return [header, ...lines].join("\n");
 }

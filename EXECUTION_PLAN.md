@@ -16,9 +16,9 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**F1-06** — tabela `idempotency_keys` genérica para APIs/webhooks (resposta repetida para a mesma chave, conflito
-quando o corpo muda), depois **AG-02** (agenda pública de agendamento) e **TSK-01** (subtarefas/Kanban).
-Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10, FIN-11, FIN-13, PAT-01.
+**AG-02** — página pública de agendamento (disponibilidade sem expor detalhes da agenda, anti-duplicidade,
+confirmação), depois **TSK-01** (subtarefas/Kanban). Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10,
+FIN-11, FIN-13, PAT-01, F1-06.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

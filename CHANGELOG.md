@@ -57,6 +57,8 @@
   dívidas e compras de cartão não pagas, com liquidez, avisos (saldo não informado, avaliação antiga, possível dupla
   contagem) e fotografias mensais automáticas. Conta ligada a banco conectado entra pelo saldo do banco, sem somar os
   lançamentos de novo; pagar fatura não altera o patrimônio. Agente Patrimônio ativo com `net_worth` e `register_asset`.
+- `Idempotency-Key` genérica (tabela `idempotency_keys`) no upload de documentos e na conexão de bancos: reenvio após
+  queda de rede não duplica; corpo diferente com a mesma chave é recusado. Upload passa a respeitar add-ons de storage.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

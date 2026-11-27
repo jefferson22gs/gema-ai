@@ -10,6 +10,7 @@ import { primaryWhatsApp } from "@/server/runtime";
 import { dispatchDueReminders } from "@/server/services/reminders";
 import { JOB_HANDLERS } from "@/server/jobs/handlers";
 import { enqueue, runJobs } from "@/server/jobs/queue";
+import { purgeExpiredIdempotencyKeys } from "@/server/idempotency";
 
 /**
  * Job agendado (Vercel Cron / Supabase pg_cron via pg_net). Autenticado por CRON_SECRET.
@@ -30,7 +31,8 @@ async function handle(req: Request) {
   if (now.getUTCDate() === 1) await db.asService((q) => enqueue(q, "patrimony.snapshot", {}, { dedupeKey: `nw:${now.toISOString().slice(0, 7)}` }));
   const jobs = await runJobs(db, JOB_HANDLERS, now);
   const outbox = await dispatchOutbox({ db, now, sendEmail: sendTransactionalEmail, whatsapp: primaryWhatsApp(), sendPush: sendWebPush() });
-  return json({ ok: true, at: now.toISOString(), reminders, automations, jobs, outbox });
+  const idempotencyPurged = await purgeExpiredIdempotencyKeys(db);
+  return json({ ok: true, at: now.toISOString(), reminders, automations, jobs, outbox, idempotencyPurged });
 }
 
 export const GET = handle;

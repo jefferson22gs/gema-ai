@@ -31,6 +31,10 @@ tabelas server-only negadas, super admin sem leitura de mensagens, RLS em 100% d
 - Prompt injection: system instruction declara conteúdo de terceiros como dado; catálogo de ferramentas estrito; ferramenta desconhecida falha sem efeito; ações sensíveis exigem confirmação humana.
 - Custos: limites por plano (mensagens/tokens), teto global mensal (`GEMINI_MAX_MONTHLY_USD`) como circuit breaker, custo estimado por chamada em `ai_usage`.
 - Segredos só em variáveis de servidor; nenhuma secret em `NEXT_PUBLIC_*`.
+- Idempotência: `Idempotency-Key` em `POST /api/documents` e `POST /api/open-finance/items` (tabela `idempotency_keys`,
+  só service role, 24 h). Mesma chave e corpo devolve a resposta gravada (`Idempotent-Replayed: true`); corpo diferente → 422;
+  em processamento → 409; 5xx libera a chave. Lançamentos, mensagens, webhooks e importações têm dedupe próprio no banco.
+- Exportações (CSV/XLSX/PDF): neutralização de fórmulas (CSV injection) e texto sempre como texto no XLSX.
 
 ## LGPD
 

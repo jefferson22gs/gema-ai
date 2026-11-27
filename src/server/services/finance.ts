@@ -1,5 +1,7 @@
 import { monthRange, addDaysToDateString, localDateString } from "@/lib/time";
 import { DomainError, type ServiceDeps } from "../context";
+import { categorize } from "../finance/statement-import";
+import { loadRules } from "./statement-import";
 
 export type TxKind = "expense" | "income";
 
@@ -55,8 +57,13 @@ export async function listCategories({ q, ctx }: ServiceDeps, kind?: TxKind): Pr
   );
 }
 
-async function resolveCategoryId(deps: ServiceDeps, kind: TxKind, slug?: string, id?: string): Promise<string | null> {
+async function resolveCategoryId(deps: ServiceDeps, kind: TxKind, slug?: string, id?: string, description?: string): Promise<string | null> {
   if (id) return id;
+  if (!slug && description) {
+    // Sem categoria informada: regras do usuário (aprendidas das correções) antes do "Outros".
+    const learned = categorize(description, kind, await loadRules(deps));
+    if (learned) return learned;
+  }
   const fallback = kind === "expense" ? "outros-despesa" : "outros-receita";
   const rows = await deps.q.query<{ id: string; slug: string }>(
     `select id, slug from categories
@@ -74,7 +81,7 @@ async function resolveCategoryId(deps: ServiceDeps, kind: TxKind, slug?: string,
 export async function createTransaction(deps: ServiceDeps, input: TransactionInput): Promise<{ transaction: TransactionRow; created: boolean }> {
   if (!Number.isInteger(input.amountCents) || input.amountCents <= 0) throw new DomainError("invalid", "Valor deve ser positivo.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.occurredOn)) throw new DomainError("invalid", "Data inválida.");
-  const categoryId = await resolveCategoryId(deps, input.kind, input.categorySlug, input.categoryId);
+  const categoryId = await resolveCategoryId(deps, input.kind, input.categorySlug, input.categoryId, input.description);
   const inserted = await deps.q.query<{ id: string }>(
     `insert into transactions (workspace_id, owner_id, visibility, kind, description, amount_cents, category_id, account_id,
        payment_method, tags, occurred_on, due_on, status, source, document_id, idempotency_key)

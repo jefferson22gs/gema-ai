@@ -45,6 +45,10 @@
   roteirizada) calculado pelo motor financeiro real, sem banco, sem IA e sem nenhuma requisição externa.
 - Landing V3: agentes especializados, Open Finance somente leitura, família e empresa, garantias de segurança e chamada
   para a demonstração. Removidos "14 dias" fixo e nome real do exemplo; teste impede métricas/preços inventados.
+- Importação de extratos OFX (1.x/2.x) e CSV de bancos brasileiros (`/app/financas/importar`): prévia antes de gravar,
+  ids estáveis (FITID ou hash), reimportação e períodos sobrepostos sem duplicar, Latin-1 aceito, linhas inválidas listadas.
+- Regras de categorização aprendidas: ao corrigir a categoria em Lançamentos com "lembrar", a regra passa a valer para
+  importações e novos lançamentos do mesmo estabelecimento (respeita despesa/receita; regras excluíveis).
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

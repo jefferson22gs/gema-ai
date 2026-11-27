@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Download, Receipt, Trash2 } from "lucide-react";
+import { Download, Receipt, Trash2, Upload } from "lucide-react";
 import { Badge, Card, EmptyState, Input, PageHeader, Select, Skeleton, buttonVariants } from "@/components/ui/primitives";
 import { db } from "@/lib/db";
 import { formatCents } from "@/lib/money";
-import { listTransactions } from "@/server/services/finance";
+import { Recategorize } from "@/components/app/recategorize";
+import { listCategories, listTransactions } from "@/server/services/finance";
 import { actorContext, requireSession } from "@/server/session";
 import { deleteTransactionAction, markPaidAction } from "../../actions";
 
 export const metadata: Metadata = { title: "Lançamentos" };
+
+const SOURCE_LABEL: Record<string, string> = { whatsapp: "WhatsApp", ai: "IA", import: "Importado", recurring: "Recorrente", document: "Documento" };
 
 async function List({ searchParams }: { searchParams: PageProps<"/app/financas/transacoes">["searchParams"] }) {
   const sp = await searchParams;
@@ -17,7 +20,11 @@ async function List({ searchParams }: { searchParams: PageProps<"/app/financas/t
   const ctx = actorContext(s);
   const kind = sp.tipo === "expense" || sp.tipo === "income" ? sp.tipo : undefined;
   const search = typeof sp.q === "string" ? sp.q.slice(0, 100) : undefined;
-  const rows = await db.asUser(s.userId, (q) => listTransactions({ q, ctx }, { kind, search, limit: 200 }));
+  const { rows, categories } = await db.asUser(s.userId, async (q) => ({
+    rows: await listTransactions({ q, ctx }, { kind, search, limit: 200 }),
+    categories: await listCategories({ q, ctx }),
+  }));
+  const byKind = (k: string) => categories.filter((c) => c.kind === k).map((c) => ({ id: c.id, name: c.name }));
   return (
     <>
       <form className="mb-4 flex flex-wrap gap-2" role="search">
@@ -49,8 +56,12 @@ async function List({ searchParams }: { searchParams: PageProps<"/app/financas/t
                 {rows.map((t) => (
                   <tr key={t.id}>
                     <td className="px-5 py-3 tabular-nums text-muted">{t.occurred_on}</td>
-                    <td className="px-3 py-3">{t.description}{t.source !== "manual" ? <Badge className="ml-2">{t.source === "whatsapp" ? "WhatsApp" : "IA"}</Badge> : null}</td>
-                    <td className="px-3 py-3 text-muted">{t.category_name ?? "—"}</td>
+                    <td className="px-3 py-3">{t.description}{t.source !== "manual" ? <Badge className="ml-2">{SOURCE_LABEL[t.source] ?? t.source}</Badge> : null}</td>
+                    <td className="px-3 py-3 text-muted">
+                      {t.owner_id === s.userId && (t.kind === "expense" || t.kind === "income")
+                        ? <Recategorize id={t.id} description={t.description} value={t.category_id} options={byKind(t.kind)} />
+                        : t.category_name ?? "—"}
+                    </td>
                     <td className={`px-3 py-3 text-right tabular-nums ${t.kind === "expense" ? "text-fg" : "text-success"}`}>{t.kind === "expense" ? "-" : "+"}{formatCents(t.amount_cents)}</td>
                     <td className="px-3 py-3">
                       {t.status === "paid" ? <Badge tone="success">Pago</Badge> : (
@@ -86,7 +97,12 @@ export default function TransacoesPage(props: PageProps<"/app/financas/transacoe
     <>
       <PageHeader
         title="Lançamentos"
-        actions={<Link href="/api/export/transactions" prefetch={false} className={buttonVariants({ variant: "secondary", size: "sm" })}><Download /> Exportar CSV</Link>}
+        actions={
+          <div className="flex gap-2">
+            <Link href="/app/financas/importar" className={buttonVariants({ variant: "secondary", size: "sm" })}><Upload /> Importar</Link>
+            <Link href="/api/export/transactions" prefetch={false} className={buttonVariants({ variant: "secondary", size: "sm" })}><Download /> Exportar CSV</Link>
+          </div>
+        }
       />
       <Suspense fallback={<Skeleton className="h-80" />}>
         <List searchParams={props.searchParams} />

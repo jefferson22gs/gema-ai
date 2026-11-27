@@ -16,8 +16,8 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**FIN-11** — importação CSV/OFX com deduplicação (prévia antes de gravar, idempotente), seguida de **FIN-10**
-(regras de categorização aprendidas das correções). SAAS-01, UX-03 e UX-04 concluídas (Testadas) em 27/11/2026.
+**FIN-13** — relatórios PDF/XLSX com proteção contra CSV/fórmula injection, seguido de **PAT-01** (patrimônio:
+ativos, passivos, snapshots). Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10, FIN-11.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

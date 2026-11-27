@@ -9,7 +9,8 @@ import { formatDateTime } from "@/lib/time";
 import { maskPii } from "@/lib/utils";
 import { primaryWhatsApp } from "@/server/runtime";
 import { requireSession } from "@/server/session";
-import { confirmWhatsAppVerification, disconnectGoogle, revokeWhatsApp, startWhatsAppVerification, syncGoogleNow } from "./actions";
+import { confirmWhatsAppVerification, disconnectGoogle, revokeWhatsApp, startWhatsAppVerification, syncGoogleNow, updateWhatsAppPrivacy } from "./actions";
+import { WhatsAppLinkCode } from "@/components/app/whatsapp-link";
 
 export const metadata: Metadata = { title: "Integrações" };
 
@@ -23,8 +24,8 @@ async function Integrations({ searchParams }: { searchParams: PageProps<"/app/in
       "select provider, status, last_error, connected_at from integrations where workspace_id = $1 and user_id = $2",
       [s.workspace.id, s.userId],
     ),
-    channels: await q.query<{ id: string; provider: string; address: string; status: string; verified_at: Date | null }>(
-      "select id, provider, address, status, verified_at from channel_accounts where user_id = $1 and status <> 'revoked' order by created_at desc",
+    channels: await q.query<{ id: string; provider: string; address: string; status: string; verified_at: Date | null; show_balances: boolean; show_transactions: boolean; show_documents: boolean }>(
+      "select id, provider, address, status, verified_at, show_balances, show_transactions, show_documents from channel_accounts where user_id = $1 and status <> 'revoked' order by created_at desc",
       [s.userId],
     ),
     sync: await q.query<{ last_synced_at: Date | null; last_error: string | null }>(
@@ -82,20 +83,38 @@ async function Integrations({ searchParams }: { searchParams: PageProps<"/app/in
             {!wa ? (
               <p className="text-xs text-subtle">O operador precisa configurar a Cloud API oficial da Meta ou um host Evolution API persistente (ver docs/EVOLUTION_DOCKER.md).</p>
             ) : verified ? (
-              <div className="flex items-center justify-between text-sm">
-                <span>{maskPii(verified.address)} · verificado</span>
-                <form action={revokeWhatsApp}><input type="hidden" name="id" value={verified.id} /><button className="text-xs text-danger hover:underline">Desvincular</button></form>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span>{maskPii(verified.address)} · verificado</span>
+                  <form action={revokeWhatsApp}><input type="hidden" name="id" value={verified.id} /><button className="text-xs text-danger hover:underline">Desvincular</button></form>
+                </div>
+                <form action={updateWhatsAppPrivacy} className="space-y-1.5 rounded-lg border border-border p-3 text-xs text-muted">
+                  <input type="hidden" name="id" value={verified.id} />
+                  <p className="font-medium text-fg">O que o assistente pode mostrar no WhatsApp</p>
+                  <label className="flex items-center gap-2"><input type="checkbox" name="show_balances" defaultChecked={verified.show_balances} className="accent-[var(--gold)]" />Saldos, limites e projeções</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" name="show_transactions" defaultChecked={verified.show_transactions} className="accent-[var(--gold)]" />Lançamentos</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" name="show_documents" defaultChecked={verified.show_documents} className="accent-[var(--gold)]" />Documentos</label>
+                  <button className="mt-1 rounded-md border border-border px-2 py-1 text-fg hover:bg-surface-2">Salvar privacidade</button>
+                </form>
+                <WhatsAppLinkCode />
+                <p className="text-[11px] text-subtle">Para trocar de número, gere um código e envie do número novo: o anterior é desvinculado.</p>
               </div>
             ) : (
               <>
-                <ActionForm action={startWhatsAppVerification} submitLabel="Enviar código" resetOnSuccess={false}>
-                  <Field label="Seu número com DDD" htmlFor="phone"><Input id="phone" name="phone" type="tel" placeholder="+55 11 91234-5678" required /></Field>
-                </ActionForm>
-                {pendingCode ? (
-                  <ActionForm action={confirmWhatsAppVerification} submitLabel="Verificar">
-                    <Field label="Código recebido" htmlFor="code"><Input id="code" name="code" inputMode="numeric" pattern="\d{6}" maxLength={6} required /></Field>
-                  </ActionForm>
-                ) : null}
+                <WhatsAppLinkCode />
+                <details className="text-xs text-muted">
+                  <summary className="cursor-pointer">Prefiro receber um código no meu número</summary>
+                  <div className="mt-3 space-y-3">
+                    <ActionForm action={startWhatsAppVerification} submitLabel="Enviar código" resetOnSuccess={false}>
+                      <Field label="Seu número com DDD" htmlFor="phone"><Input id="phone" name="phone" type="tel" placeholder="+55 11 91234-5678" required /></Field>
+                    </ActionForm>
+                    {pendingCode ? (
+                      <ActionForm action={confirmWhatsAppVerification} submitLabel="Verificar">
+                        <Field label="Código recebido" htmlFor="code"><Input id="code" name="code" inputMode="numeric" pattern="\d{6}" maxLength={6} required /></Field>
+                      </ActionForm>
+                    ) : null}
+                  </div>
+                </details>
               </>
             )}
             <p className="text-[11px] text-subtle">Ao verificar, você consente receber mensagens da GEMA neste número. Envie “parar” ou desvincule a qualquer momento.</p>

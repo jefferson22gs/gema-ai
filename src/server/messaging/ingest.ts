@@ -4,6 +4,7 @@ import type { AiModel } from "../ai/model";
 import { handleUserMessage, type IncomingUserMessage } from "../ai/orchestrator";
 import type { GoogleGateway } from "../integrations/google/types";
 import { logWebhook, markWebhook } from "../webhooks/log";
+import { consumeLinkCode, extractLinkCode, type InboundLinkResult } from "./verification";
 import type { InboundMessage, MessagingProvider } from "./types";
 
 export interface IngestDeps {
@@ -83,6 +84,22 @@ export async function ingestWebhook(deps: IngestDeps, rawBody: string, headers: 
 
 async function handleInbound(deps: IngestDeps, event: InboundMessage): Promise<Reply | null> {
   if (event.fromMe) return null; // anti-loop: nunca responde a si mesmo
+  if (deps.provider.name === "dashboard") return null;
+
+  // Vinculação inbound: mensagem com código "GEMA-1234-5678" gerado no painel comprova a posse do número.
+  const linkCode = extractLinkCode(event.text);
+  if (linkCode) {
+    const r = await consumeLinkCode(deps.db, deps.provider.name, event.from, linkCode);
+    const replies: Record<InboundLinkResult["status"], string> = {
+      linked: "✅ Número vinculado ao seu GEMA AI. Você já pode me pedir coisas por aqui. Para desvincular, use Integrações no painel.",
+      invalid: "Código inválido ou já utilizado. Gere um novo em Integrações → WhatsApp no painel.",
+      expired: "Este código expirou. Gere um novo em Integrações → WhatsApp no painel.",
+      blocked: "Muitas tentativas a partir deste número. Tente novamente em 1 hora.",
+      conflict: "Este número já está vinculado a outra conta GEMA AI. Desvincule por lá antes de vincular aqui.",
+    };
+    return { text: replies[r.status] };
+  }
+
   const owner = await resolveOwner(deps.db, deps.provider.name, event.from);
   if (!owner) {
     // Número desconhecido/não verificado: não processa nem responde (evita spam e vazamento).

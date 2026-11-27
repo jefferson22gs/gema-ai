@@ -23,12 +23,12 @@
 | WA-01 | Evolution | Adaptador token de instância + `x-evo-secret` + @lid + mídia base64 | P0 | — | Testes de contrato | Testada | `tests/integrations/evolution.test.ts` | a6bb4d6 | BLK-03 |
 | WA-02 | Whaileys | Botões ✅ Confirmar/Cancelar, HMAC, dedupe | P0 | — | Testes de contrato | Testada | `tests/integrations/whaileys.test.ts` | 7009035 | BLK-03 |
 | WA-03 | Meta Cloud | Adaptador oficial | P1 | — | Testes de contrato | Testada | `tests/integrations/whatsapp.test.ts` | 74610c2 | BLK-10 |
-| WA-04 | Vinculação | Fluxo V3: usuário pede código no painel e ENVIA o código ao número oficial (inbound) — além do fluxo outbound existente | P0 | WA-01 | Código uso único, expira, limite de tentativas, conflito de número, auditoria; testes | Pendente | — | — | — |
+| WA-04 | Vinculação | Fluxo V3: usuário pede código no painel e ENVIA o código ao número oficial (inbound) — além do fluxo outbound existente | P0 | WA-01 | Código uso único, expira, limite de tentativas, conflito de número, auditoria; testes | Testada | migration `20261127000002_whatsapp_linking.sql`; `createLinkCode`/`consumeLinkCode` (uso único, 15 min, 5 falhas/h por número, conflito, troca de número, auditoria); UI em Integrações; `tests/integrations/whatsapp-linking.test.ts` — homologação real BLK-03 | — | — |
 | WA-05 | Ingestão | Ingestão assíncrona via fila (responder 200 rápido, processar no worker) | P1 | F1-05 | Webhook só enfileira; worker processa; retry/DLQ | Pendente | — | — | — |
 | WA-06 | Mídia | PDF/planilha/documento recebidos → cofre documental + extração | P1 | DOC-02 | Documento recebido vira `documents` do titular | Pendente | — | — | BLK-04 |
 | WA-07 | Inbox | Central de conversas ao vivo (modos IA/humano/copiloto/pausado, lock exclusivo, notas internas) | P1 | WA-05 | Humano assume ⇒ IA não responde; testes de exclusão mútua | Pendente | — | — | — |
 | WA-08 | Status | Status de envio/entrega/leitura (`messages.update`/`MESSAGES_UPDATE`) | P2 | WA-01 | Status gravado em `notification_deliveries`/mensagens | Pendente | — | — | BLK-03 |
-| WA-09 | Privacidade | Configurar quais dados o WhatsApp pode exibir (ex.: ocultar saldos) | P1 | WA-04 | Ferramenta respeita preferência; teste | Pendente | — | — | — |
+| WA-09 | Privacidade | Configurar quais dados o WhatsApp pode exibir (ex.: ocultar saldos) | P1 | WA-04 | Ferramenta respeita preferência; teste | Testada | `channel_accounts.show_balances/transactions/documents` (padrão: saldos ocultos); executor bloqueia consultas sensíveis no WhatsApp sem permissão; mesmos testes | — | — |
 
 ## Fase 3 — IA, agentes, memória, aprovações
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |

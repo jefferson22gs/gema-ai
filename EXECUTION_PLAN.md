@@ -16,9 +16,8 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**WA-04** — vinculação do WhatsApp por código enviado pelo usuário ao número oficial (inbound), com uso único,
-expiração, limite de tentativas, conflito de número e auditoria. Depois **F1-03/F1-04** (papéis ampliados, permissões por
-módulo/ação, convites com token) e **WA-05** (ingestão de webhooks via fila).
+**F1-03/F1-04** — papéis ampliados (gestor, financeiro, contador, colaborador, familiar), permissões por módulo/ação
+(função `app.can`) e convites com token de uso único. Depois **WA-05** (ingestão de webhooks via fila) e **WA-07** (inbox).
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

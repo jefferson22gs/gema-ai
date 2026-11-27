@@ -13,9 +13,19 @@ Contrato único `MessagingProvider` (`src/server/messaging/types.ts`): `receive`
 Saída (verificação de número e notificações): Meta (oficial) > Whaileys > Evolution — o primeiro configurado.
 O número fica vinculado ao provedor que enviou o código (`channel_accounts.provider`).
 
+## Vinculação
+
+1. **Recomendado (inbound):** no painel, Integrações → WhatsApp → "Gerar código". O usuário envia `GEMA-1234-5678` do próprio
+   WhatsApp ao número oficial (`NEXT_PUBLIC_WHATSAPP_NUMBER`). Uso único, 15 min, bloqueio após 5 falhas/h por número,
+   conflito se o número já pertencer a outra conta, troca de número revoga o vínculo anterior, tudo auditado.
+2. **Alternativo (outbound):** o GEMA envia um código de 6 dígitos ao número informado; o usuário digita no painel.
+
+Cada membro usa o próprio número. Preferências de privacidade por canal: saldos/limites/projeções ficam **ocultos** no WhatsApp
+até o titular permitir (`show_balances`).
+
 ## Regras aplicadas
 
-- Titular identificado **somente** por `channel_accounts` verificada (código de 6 dígitos enviado ao número, até 5 tentativas, expira em 10 min). Número no payload não autentica.
+- Titular identificado **somente** por `channel_accounts` verificada (fluxos acima). Número no payload não autentica.
 - Ignora `fromMe`, grupos e status (anti-loop); dedupe por `provider_message_id`; replay protection por id de evento.
 - Número desconhecido: nada é processado nem respondido.
 - Ação que exige confirmação: botões **✅ Confirmar / Cancelar** (ids `confirmar`/`cancelar`), com as opções também numeradas no texto; clique, `1`/`2` ou digitação funcionam igual. Evolution sem botões: só o texto numerado.

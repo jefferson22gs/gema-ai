@@ -10,6 +10,9 @@ export type ExecutionStatus = "proposed" | "awaiting_confirmation" | "running" |
 /** Aprovações expiram em 30 minutos. */
 export const APPROVAL_TTL_MS = 30 * 60_000;
 
+/** Consultas que expõem saldos/limites/projeções — no WhatsApp dependem de `channel_accounts.show_balances`. */
+const SENSITIVE_ON_CHANNEL = new Set(["bank_balances", "list_credit_cards", "cashflow_forecast", "simulate_purchase", "financial_health"]);
+
 export interface ToolCallRequest {
   name: string;
   args: unknown;
@@ -81,6 +84,16 @@ async function executeOne(deps: ExecutorDeps, call: ToolCallRequest, key: string
   if (deps.allowedTools && !deps.allowedTools.has(call.name)) {
     await record(db, ctx, deps, { tool: call.name, args, key, status: "failed", error: "ferramenta fora do escopo do agente", risk: tool.risk });
     return { executionId: null, tool: call.name, status: "failed", message: "Esta ação não está disponível para o agente atual." };
+  }
+
+  // Privacidade do canal: pelo WhatsApp, valores/saldos só aparecem se o titular permitiu.
+  if (ctx.channel === "whatsapp" && SENSITIVE_ON_CHANNEL.has(call.name)) {
+    const [pref] = await db.asUser(ctx.userId, (q) =>
+      q.query<{ show_balances: boolean }>("select show_balances from channel_accounts where user_id = $1 and status = 'verified' order by verified_at desc limit 1", [ctx.userId]),
+    );
+    if (!pref?.show_balances) {
+      return { executionId: null, tool: call.name, status: "failed", message: "Por privacidade, saldos e valores consolidados não são exibidos no WhatsApp. Consulte no painel ou ative em Integrações → WhatsApp." };
+    }
   }
 
   // Risco 4: nunca executa pela IA — registra como bloqueada para auditoria.

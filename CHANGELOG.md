@@ -25,6 +25,9 @@
   `X-Pluggy-Signature`), sincronização idempotente via fila, varredura diária, Central de Bancos e Consentimentos, revogação
   que exclui o item no provedor, widget oficial `pluggy-connect-sdk` (CSP liberada só para `connect.pluggy.ai`).
   Ferramenta de IA `bank_balances` informa a data do saldo (não finge tempo real).
+- Vinculação do WhatsApp pelo fluxo V3: código `GEMA-XXXX-XXXX` gerado no painel e enviado pelo usuário ao número oficial
+  (uso único, 15 min, bloqueio após 5 falhas/h por número, conflito com outra conta, troca de número, auditoria).
+- Privacidade do canal: saldos, limites e projeções ocultos no WhatsApp por padrão; titular escolhe o que pode aparecer.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

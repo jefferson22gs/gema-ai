@@ -7,7 +7,7 @@ import { DomainError } from "@/server/context";
 import { rateLimit } from "@/server/http";
 import { revokeGoogle } from "@/server/integrations/google/oauth";
 import { syncGoogleCalendar } from "@/server/integrations/google/sync";
-import { confirmPhoneVerification, startPhoneVerification } from "@/server/messaging/verification";
+import { confirmPhoneVerification, createLinkCode, startPhoneVerification, unlinkChannel } from "@/server/messaging/verification";
 import { googleConfig, primaryWhatsApp } from "@/server/runtime";
 import { requireSession } from "@/server/session";
 import type { ActionState } from "../actions";
@@ -40,7 +40,29 @@ export async function confirmWhatsAppVerification(_: ActionState, form: FormData
 export async function revokeWhatsApp(form: FormData) {
   const s = await requireSession();
   const id = z.string().uuid().parse(form.get("id"));
-  await db.asService((q) => q.query("update channel_accounts set status = 'revoked' where id = $1 and user_id = $2", [id, s.userId]));
+  await unlinkChannel(db, s.userId, id);
+  refresh();
+}
+
+/** Gera código de vinculação inbound (mostrado uma única vez ao usuário autenticado). */
+export async function createWhatsAppLinkCode(): Promise<{ code?: string; expiresAt?: string; number?: string | null; error?: string }> {
+  const s = await requireSession();
+  const provider = primaryWhatsApp();
+  if (!provider) return { error: "Canal WhatsApp não configurado nesta instalação." };
+  if (!(await rateLimit(`wa-link:${s.userId}`, 5, 3600))) return { error: "Limite de códigos atingido. Tente em 1 hora." };
+  const r = await createLinkCode(db, s.userId, s.workspace.id, provider.name);
+  return { code: r.code, expiresAt: r.expiresAt.toISOString(), number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim() || null };
+}
+
+export async function updateWhatsAppPrivacy(form: FormData) {
+  const s = await requireSession();
+  const id = z.string().uuid().parse(form.get("id"));
+  await db.asUser(s.userId, (q) =>
+    q.query(
+      "update channel_accounts set show_balances = $3, show_transactions = $4, show_documents = $5 where id = $1 and user_id = $2",
+      [id, s.userId, form.get("show_balances") === "on", form.get("show_transactions") === "on", form.get("show_documents") === "on"],
+    ),
+  );
   refresh();
 }
 

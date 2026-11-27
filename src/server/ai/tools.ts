@@ -9,6 +9,11 @@ import * as finance from "../services/finance";
 import * as tasks from "../services/tasks";
 import * as reminders from "../services/reminders";
 import { buildBriefing } from "../services/briefing";
+import * as cards from "../services/cards";
+import * as planning from "../services/planning";
+import { canAfford } from "../finance/engine";
+import { AUTOMATION_TEMPLATES, createRule } from "../automations/engine";
+import { localDateString } from "@/lib/time";
 import { RELATIVE_DAYS, WEEKDAYS, resolveInstant, resolveLocalDate } from "./dates";
 
 /**
@@ -23,11 +28,25 @@ export interface ToolRuntime extends ServiceDeps {
 
 export type ToolResult = { summary: string; data?: unknown };
 
+/**
+ * Nível de risco (Central de Aprovações):
+ * 1 consulta · 2 operação reversível · 3 ação externa/sensível (sempre exige aprovação) ·
+ * 4 operação financeira crítica (pagamento, transferência, investimento, crédito) — NUNCA executa pela IA.
+ */
+export type RiskLevel = 1 | 2 | 3 | 4;
+
+export type AgentKey =
+  | "orchestrator" | "finance" | "secretary" | "productivity" | "documents" | "research" | "family"
+  | "business" | "fiscal" | "wealth" | "automations" | "communication" | "shopping";
+
 export interface ToolDefinition<S extends z.ZodType = z.ZodType> {
   name: string;
   description: string;
   schema: S;
-  /** Ações que alteram dados sensíveis/externos ou terceiros exigem confirmação explícita. */
+  risk: RiskLevel;
+  /** Agente especializado dono da ferramenta (o orquestrador vê todas; agentes veem as suas). */
+  agent: AgentKey;
+  /** Confirmação adicional para risco 1–2 conforme os argumentos (risco ≥3 sempre confirma). */
   requiresConfirmation: (args: z.infer<S>) => boolean;
   /** Texto exibido ao pedir confirmação. */
   describe: (args: z.infer<S>, rt: ToolRuntime) => string;
@@ -69,6 +88,8 @@ function money(kind: finance.TxKind) {
       ? "Registra UMA OU MAIS despesas. Para 'gastei 85 no almoço e 40 no combustível' envie dois itens em uma única chamada."
       : "Registra uma ou mais receitas.",
     schema: z.object({ items: z.array(moneyItem).min(1).max(20) }),
+    risk: 2,
+    agent: "finance",
     requiresConfirmation: (a) => a.items.some((i) => cents(i.amount) >= 500_000), // >= R$ 5.000 confirma
     describe: (a) => a.items.map((i) => `${i.description}: ${formatCents(cents(i.amount))}`).join("; "),
     async execute(a, rt) {
@@ -116,6 +137,8 @@ const toolList = [
     name: "get_day_briefing",
     description: "Resumo do dia: compromissos, tarefas, contas a vencer e gastos (somente dados reais).",
     schema: z.object({}),
+    risk: 1,
+    agent: "orchestrator",
     requiresConfirmation: () => false,
     describe: () => "Gerar briefing do dia",
     async execute(_a, rt) {
@@ -130,6 +153,8 @@ const toolList = [
     name: "list_calendar_events",
     description: "Lista compromissos de um dia.",
     schema: z.object({ ...dateRef }),
+    risk: 1,
+    agent: "secretary",
     requiresConfirmation: () => false,
     describe: () => "Listar compromissos",
     async execute(a, rt) {
@@ -149,6 +174,8 @@ const toolList = [
     name: "check_availability",
     description: "Verifica se um horário está livre.",
     schema: z.object({ ...dateRef, time, duration_minutes: z.number().int().min(5).max(720).optional() }),
+    risk: 1,
+    agent: "secretary",
     requiresConfirmation: () => false,
     describe: () => "Verificar disponibilidade",
     async execute(a, rt) {
@@ -166,6 +193,8 @@ const toolList = [
     name: "create_calendar_event",
     description: "Cria compromisso. A data é resolvida pelo servidor a partir de relative_day/weekday/date.",
     schema: eventCreate,
+    risk: 2,
+    agent: "secretary",
     requiresConfirmation: (a) => Boolean(a.sync_google || a.attendees?.length || a.allow_conflict),
     describe: (a, rt) => {
       const date = resolveLocalDate(rt.ctx, a);
@@ -209,6 +238,8 @@ const toolList = [
     name: "update_calendar_event",
     description: "Reagenda ou altera um compromisso existente (use o id retornado por list_calendar_events).",
     schema: z.object({ event_id: z.string().uuid(), title: z.string().optional(), ...dateRef, time: time.optional(), location: z.string().optional(), allow_conflict: z.boolean().optional() }),
+    risk: 3,
+    agent: "secretary",
     requiresConfirmation: () => true,
     describe: (a) => `Alterar compromisso ${a.event_id}${a.time ? ` para ${a.time}` : ""}`,
     async execute(a, rt) {
@@ -222,6 +253,8 @@ const toolList = [
     name: "cancel_calendar_event",
     description: "Cancela um compromisso pelo id.",
     schema: z.object({ event_id: z.string().uuid() }),
+    risk: 3,
+    agent: "secretary",
     requiresConfirmation: () => true,
     describe: (a) => `Cancelar compromisso ${a.event_id}`,
     async execute(a, rt) {
@@ -239,6 +272,8 @@ const toolList = [
       company: z.string().max(160).optional(),
       sync_google: z.boolean().optional(),
     }),
+    risk: 3,
+    agent: "communication",
     requiresConfirmation: () => true,
     describe: (a) => {
       const phone = a.phone ? contacts.normalizePhoneE164(a.phone) : null;
@@ -273,6 +308,8 @@ const toolList = [
     name: "find_contact",
     description: "Procura contatos por nome, telefone, e-mail ou empresa.",
     schema: z.object({ query: z.string().min(1).max(100) }),
+    risk: 1,
+    agent: "communication",
     requiresConfirmation: () => false,
     describe: (a) => `Buscar contato ${a.query}`,
     async execute(a, rt) {
@@ -294,6 +331,8 @@ const toolList = [
       to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       search: z.string().max(100).optional(),
     }),
+    risk: 1,
+    agent: "finance",
     requiresConfirmation: () => false,
     describe: () => "Listar lançamentos",
     async execute(a, rt) {
@@ -315,6 +354,8 @@ const toolList = [
       priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
       notes: z.string().max(2000).optional(),
     }),
+    risk: 2,
+    agent: "productivity",
     requiresConfirmation: () => false,
     describe: (a) => `Criar tarefa ${a.title}`,
     async execute(a, rt) {
@@ -333,6 +374,8 @@ const toolList = [
     name: "complete_task",
     description: "Conclui tarefa pelo id ou por título aproximado.",
     schema: z.object({ task_id: z.string().uuid().optional(), title: z.string().max(200).optional() }).refine((a) => a.task_id || a.title, "Informe task_id ou title"),
+    risk: 2,
+    agent: "productivity",
     requiresConfirmation: () => false,
     describe: (a) => `Concluir tarefa ${a.title ?? a.task_id}`,
     async execute(a, rt) {
@@ -351,6 +394,8 @@ const toolList = [
     name: "create_reminder",
     description: "Cria lembrete único ou recorrente (diário/semanal/mensal) no horário local do usuário.",
     schema: z.object({ title: z.string().min(1).max(200), ...dateRef, time, recurrence: z.enum(["daily", "weekly", "monthly"]).optional() }),
+    risk: 2,
+    agent: "secretary",
     requiresConfirmation: () => false,
     describe: (a) => `Lembrete ${a.title} às ${a.time}`,
     async execute(a, rt) {
@@ -367,6 +412,8 @@ const toolList = [
     name: "list_reminders",
     description: "Lista lembretes ativos.",
     schema: z.object({}),
+    risk: 1,
+    agent: "secretary",
     requiresConfirmation: () => false,
     describe: () => "Listar lembretes",
     async execute(_a, rt) {
@@ -381,6 +428,8 @@ const toolList = [
     name: "search_documents",
     description: "Busca documentos por nome, tipo ou etiqueta (metadados).",
     schema: z.object({ query: z.string().min(1).max(100) }),
+    risk: 1,
+    agent: "documents",
     requiresConfirmation: () => false,
     describe: (a) => `Buscar documentos ${a.query}`,
     async execute(a, rt) {
@@ -397,6 +446,8 @@ const toolList = [
     name: "generate_report",
     description: "Relatório financeiro do mês corrente (receitas, despesas, saldo e categorias).",
     schema: z.object({}),
+    risk: 1,
+    agent: "finance",
     requiresConfirmation: () => false,
     describe: () => "Gerar relatório do mês",
     async execute(_a, rt) {
@@ -413,6 +464,8 @@ const toolList = [
     name: "list_business_integrations",
     description: "Lista integrações de negócio e o status real (não executa ações externas).",
     schema: z.object({}),
+    risk: 1,
+    agent: "business",
     requiresConfirmation: () => false,
     describe: () => "Listar integrações",
     async execute(_a, rt) {
@@ -426,9 +479,186 @@ const toolList = [
     },
   }),
   defineTool({
+    name: "list_credit_cards",
+    description: "Lista cartões de crédito com limite usado/disponível e fatura atual (valores calculados pelo sistema).",
+    schema: z.object({}),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Listar cartões",
+    async execute(_a, rt) {
+      const list = await cards.listCards(rt);
+      if (!list.length) return { summary: "Nenhum cartão cadastrado. Cadastre em Finanças → Cartões.", data: [] };
+      const today = localDateString(rt.ctx.now, rt.ctx.timezone);
+      const out = [];
+      for (const c of list) {
+        const s = await cards.cardSummary(rt, c.id, today);
+        out.push({ id: c.id, name: c.name, limit: s.limit, current: s.current ? { reference: s.current.reference, due: s.current.due_date, totalCents: s.current.total_cents } : null });
+      }
+      return {
+        summary: out.map((c) => `${c.name}: usado ${formatCents(c.limit.usedCents)} de ${formatCents(c.limit.limitCents)} (${c.limit.usagePct}%)${c.current ? `; fatura ${c.current.reference} ${formatCents(c.current.totalCents)}, vence ${c.current.due}` : ""}`).join("; "),
+        data: out,
+      };
+    },
+  }),
+  defineTool({
+    name: "create_card_purchase",
+    description: "Registra compra no cartão de crédito, à vista ou parcelada (parcelas geradas nas faturas corretas).",
+    schema: z.object({
+      card_id: z.string().uuid(),
+      description: z.string().min(1).max(200),
+      amount,
+      installments: z.number().int().min(1).max(48).optional().describe("Padrão 1"),
+      ...dateRef,
+    }),
+    risk: 2,
+    agent: "finance",
+    requiresConfirmation: (a) => (a.installments ?? 1) > 1 || cents(a.amount) >= 500_000,
+    describe: (a) => `Compra no cartão: ${a.description} ${formatCents(cents(a.amount))}${(a.installments ?? 1) > 1 ? ` em ${a.installments}x` : ""}`,
+    async execute(a, rt) {
+      const r = await cards.createCardPurchase(rt, {
+        cardId: a.card_id, description: a.description, totalCents: cents(a.amount), installments: a.installments ?? 1,
+        purchaseDate: resolveLocalDate(rt.ctx, a), idempotencyKey: rt.idempotencyKey,
+      });
+      return {
+        summary: `${r.created ? "Compra registrada" : "Compra já registrada"}: ${r.installments.map((i) => `${i.number}/${r.installments.length} ${formatCents(i.amountCents)} (fatura ${i.reference})`).join(", ")}.`,
+        data: r,
+      };
+    },
+  }),
+  defineTool({
+    name: "simulate_purchase",
+    description: "Simula 'posso fazer esta compra?': impacto no cartão (parcelas e limite) ou no saldo projetado da conta.",
+    schema: z.object({ amount, installments: z.number().int().min(1).max(48).optional(), card_id: z.string().uuid().optional() }),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Simular compra",
+    async execute(a, rt) {
+      const total = cents(a.amount);
+      const today = localDateString(rt.ctx.now, rt.ctx.timezone);
+      if (a.card_id) {
+        const s = await cards.cardSummary(rt, a.card_id, today);
+        const sim = cards.simulateCardPurchase(s.card, s.bills, s.limit, total, a.installments ?? 1, today);
+        return {
+          summary: `${sim.fitsLimit ? "Cabe no limite" : "NÃO cabe no limite disponível"} (${formatCents(s.limit.availableCents)} disponíveis). Faturas: ${sim.bills.map((b) => `${b.reference} ${formatCents(b.beforeCents)} → ${formatCents(b.afterCents)}`).join("; ")}. Simulação, nada foi registrado.`,
+          data: sim,
+        };
+      }
+      const p = await planning.cashflowProjection(rt, 60);
+      const r = canAfford(p, total, today, 0);
+      return {
+        summary: `${r.ok ? "Pelo saldo projetado, a compra cabe" : "Pelo saldo projetado, a compra deixaria o saldo negativo"}: menor saldo após a compra ${formatCents(r.lowestBalanceAfterCents)}. Hipóteses: ${p.assumptions.join(" ")}`,
+        data: r,
+      };
+    },
+  }),
+  defineTool({
+    name: "cashflow_forecast",
+    description: "Projeção de saldo para os próximos dias (pendentes e faturas registradas), com hipóteses.",
+    schema: z.object({ days: z.number().int().min(7).max(365).optional() }),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Projetar fluxo de caixa",
+    async execute(a, rt) {
+      const p = await planning.cashflowProjection(rt, a.days ?? 30);
+      return {
+        summary: `Saldo atual ${formatCents(p.startBalanceCents)}; projetado em ${a.days ?? 30} dias ${formatCents(p.endBalanceCents)}; menor saldo ${formatCents(p.lowest.balanceCents)} em ${p.lowest.date}. ${p.assumptions[2]}`,
+        data: { start: p.startBalanceCents, end: p.endBalanceCents, lowest: p.lowest, events: p.events },
+      };
+    },
+  }),
+  defineTool({
+    name: "create_goal",
+    description: "Cria meta financeira (reserva, viagem, imóvel etc.).",
+    schema: z.object({
+      name: z.string().min(1).max(120),
+      target: amount,
+      deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      kind: z.enum(["emergency", "property", "vehicle", "travel", "education", "retirement", "debt_payoff", "custom"]).optional(),
+    }),
+    risk: 2,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: (a) => `Criar meta ${a.name}`,
+    async execute(a, rt) {
+      const id = await planning.createGoal(rt, { name: a.name, targetCents: cents(a.target), deadline: a.deadline, kind: a.kind });
+      const g = (await planning.listGoals(rt)).find((x) => x.id === id)!;
+      return {
+        summary: `Meta criada: ${g.name}, objetivo ${formatCents(g.target_cents)}${g.requiredMonthlyCents !== null ? `; para atingir no prazo, guarde ${formatCents(g.requiredMonthlyCents)} por mês` : ""}.`,
+        data: { id },
+      };
+    },
+  }),
+  defineTool({
+    name: "list_goals",
+    description: "Lista metas com progresso e contribuição mensal necessária.",
+    schema: z.object({}),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Listar metas",
+    async execute(_a, rt) {
+      const goals = await planning.listGoals(rt);
+      return {
+        summary: goals.length ? goals.map((g) => `${g.name}: ${g.pct}% (${formatCents(g.savedCents)} de ${formatCents(g.targetCents)})`).join("; ") : "Nenhuma meta cadastrada.",
+        data: goals.map((g) => ({ id: g.id, name: g.name, pct: g.pct })),
+      };
+    },
+  }),
+  defineTool({
+    name: "financial_health",
+    description: "Indicador educacional de saúde financeira (0–100) com metodologia. Não é score de crédito.",
+    schema: z.object({}),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Calcular saúde financeira",
+    async execute(_a, rt) {
+      const h = await planning.healthScore(rt);
+      if (!h) return { summary: "Ainda não há meses completos de lançamentos para calcular o indicador.", data: null };
+      return { summary: `Saúde financeira: ${h.score}/100. ${h.components.map((c) => `${c.label} ${c.points}/${c.max}`).join("; ")}. ${h.disclaimer}`, data: h };
+    },
+  }),
+  defineTool({
+    name: "create_automation",
+    description: "Ativa uma rotina automática por modelo: briefing diário, conta a vencer, resumo semanal, tarefa atrasada ou compromisso chegando.",
+    schema: z.object({
+      template: z.enum(["daily_briefing", "bill_due_soon", "weekly_summary", "task_overdue", "event_upcoming"]),
+      time: time.optional().describe("Horário local, quando aplicável"),
+      channels: z.array(z.enum(["email", "whatsapp", "push"])).max(3).optional().describe("Além do painel"),
+    }),
+    risk: 2,
+    agent: "automations",
+    requiresConfirmation: () => true, // mostrar a regra antes de ativar
+    describe: (a) => `Ativar automação "${AUTOMATION_TEMPLATES[a.template].name}"${a.time ? ` às ${a.time}` : ""} (canais: painel${a.channels?.length ? `, ${a.channels.join(", ")}` : ""})`,
+    async execute(a, rt) {
+      const id = await createRule(rt.q, {
+        workspaceId: rt.ctx.workspaceId, ownerId: rt.ctx.userId, template: a.template, timezone: rt.ctx.timezone, now: rt.ctx.now,
+        channels: ["dashboard", ...(a.channels ?? [])], config: a.time ? { time: a.time } : undefined,
+      });
+      return { summary: `Automação ativada: ${AUTOMATION_TEMPLATES[a.template].name}.`, data: { id } };
+    },
+  }),
+  defineTool({
+    name: "request_payment_or_transfer",
+    description: "Pedidos de pagamento, PIX, transferência, investimento ou crédito. O assistente NÃO executa essas operações.",
+    schema: z.object({ kind: z.enum(["payment", "pix", "transfer", "investment", "loan"]), amount: amount.optional(), to: z.string().max(200).optional() }),
+    risk: 4,
+    agent: "finance",
+    requiresConfirmation: () => true,
+    describe: (a) => `Operação financeira crítica: ${a.kind}`,
+    async execute() {
+      throw new DomainError("forbidden", "Operações financeiras críticas não são executadas pelo assistente.");
+    },
+  }),
+  defineTool({
     name: "request_confirmation",
     description: "Use quando faltar informação importante ou houver ambiguidade: faz uma pergunta objetiva ao usuário sem executar nada.",
     schema: z.object({ question: z.string().min(1).max(300) }),
+    risk: 1,
+    agent: "orchestrator",
     requiresConfirmation: () => false,
     describe: (a) => a.question,
     async execute(a) {
@@ -439,8 +669,9 @@ const toolList = [
 
 export const TOOLS: ReadonlyMap<string, ToolDefinition> = new Map(toolList.map((t) => [t.name, t as unknown as ToolDefinition]));
 
-export function toolDeclarations() {
-  return toolList.map((t) => ({
+export function toolDeclarations(only?: ReadonlySet<string>) {
+  // Risco 4 é declarado para o modelo reconhecer o pedido e o executor bloquear com explicação.
+  return toolList.filter((t) => !only || only.has(t.name)).map((t) => ({
     name: t.name,
     description: t.description,
     parametersJsonSchema: z.toJSONSchema(t.schema, { target: "draft-7", io: "input" }),

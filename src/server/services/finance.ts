@@ -152,20 +152,26 @@ export async function monthSummary(deps: ServiceDeps, reference?: Date): Promise
     const [y, m] = start.split("-").map(Number);
     return m === 1 ? `${y - 1}-12-01` : `${y}-${String(m - 1).padStart(2, "0")}-01`;
   })();
+  // Regime de competência: contam pagos, conciliados e pendentes do mês; projetados (parcelas futuras),
+  // cancelados e estornados não. Transferências e pagamentos de fatura não são receita/despesa; reembolso abate despesa.
   const [totals] = await deps.q.query<{ income: number; expense: number; count: number; prev_expense: number }>(
     `select
        coalesce(sum(amount_cents) filter (where kind = 'income' and occurred_on >= $2), 0)::bigint as income,
-       coalesce(sum(amount_cents) filter (where kind = 'expense' and occurred_on >= $2), 0)::bigint as expense,
+       (coalesce(sum(amount_cents) filter (where kind = 'expense' and occurred_on >= $2), 0)
+        - coalesce(sum(amount_cents) filter (where kind = 'refund' and occurred_on >= $2), 0))::bigint as expense,
        count(*) filter (where occurred_on >= $2)::bigint as count,
-       coalesce(sum(amount_cents) filter (where kind = 'expense' and occurred_on < $2), 0)::bigint as prev_expense
+       (coalesce(sum(amount_cents) filter (where kind = 'expense' and occurred_on < $2), 0)
+        - coalesce(sum(amount_cents) filter (where kind = 'refund' and occurred_on < $2), 0))::bigint as prev_expense
      from transactions
-     where workspace_id = $1 and deleted_at is null and occurred_on >= $4 and occurred_on < $3`,
+     where workspace_id = $1 and deleted_at is null and occurred_on >= $4 and occurred_on < $3
+       and status in ('paid', 'reconciled', 'pending')`,
     [deps.ctx.workspaceId, start, end, prevStart],
   );
   const byCategory = await deps.q.query<{ category: string; slug: string | null; cents: number }>(
     `select coalesce(c.name, 'Sem categoria') as category, c.slug, sum(t.amount_cents)::bigint as cents
      from transactions t left join categories c on c.id = t.category_id
      where t.workspace_id = $1 and t.deleted_at is null and t.kind = 'expense' and t.occurred_on >= $2 and t.occurred_on < $3
+       and t.status in ('paid', 'reconciled', 'pending')
      group by c.name, c.slug order by cents desc`,
     [deps.ctx.workspaceId, start, end],
   );
@@ -208,6 +214,7 @@ export async function listBudgets(deps: ServiceDeps): Promise<BudgetRow[]> {
     `select b.id, b.category_id, c.name as category_name, b.limit_cents,
             coalesce((select sum(t.amount_cents) from transactions t
                       where t.workspace_id = b.workspace_id and t.category_id = b.category_id and t.kind = 'expense'
+                        and t.status in ('paid', 'reconciled', 'pending')
                         and t.deleted_at is null and t.occurred_on >= $2 and t.occurred_on < $3), 0)::bigint as spent_cents
      from budgets b join categories c on c.id = b.category_id
      where b.workspace_id = $1 and b.month = $2::date

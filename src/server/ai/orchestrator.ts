@@ -2,8 +2,10 @@ import type { Database } from "@/lib/db/types";
 import { formatLongDate, localDateString } from "@/lib/time";
 import type { ActorContext } from "../context";
 import type { GoogleGateway } from "../integrations/google/types";
+import { routeAgent, toolsForAgent, type AgentDefinition } from "./agents";
 import { executeToolCalls, type ExecutionOutcome } from "./executor";
 import { estimateCostUsd, type AiModel } from "./model";
+import type { AgentKey } from "./tools";
 
 export const MAX_TEXT_CHARS = 4000;
 export const MAX_MEDIA_BYTES = 8 * 1024 * 1024;
@@ -16,6 +18,8 @@ export interface IncomingUserMessage {
   providerMessageId: string;
   provider: "dashboard" | "evolution" | "meta_cloud" | "baileys_whaileys";
   conversationId?: string;
+  /** Agente escolhido explicitamente pelo usuário no painel. */
+  agent?: AgentKey;
 }
 
 export interface AssistantReply {
@@ -23,6 +27,7 @@ export interface AssistantReply {
   reply: string;
   outcomes: ExecutionOutcome[];
   duplicate: boolean;
+  agent?: { key: AgentKey; name: string; title: string };
 }
 
 export interface OrchestratorDeps {
@@ -33,9 +38,12 @@ export interface OrchestratorDeps {
   assistantName?: string;
 }
 
-export function systemInstruction(ctx: ActorContext, assistantName = "Gema"): string {
+export function systemInstruction(ctx: ActorContext, assistantName = "Gema", agent?: AgentDefinition): string {
   return [
     `Você é ${assistantName}, assessor executivo do GEMA AI. Responda em português do Brasil, de forma curta, precisa e cordial.`,
+    ...(agent && agent.key !== "orchestrator" ? [`Neste pedido você atua como ${agent.title} (${agent.name}): ${agent.description} ${agent.instructions}`] : []),
+    `Valores financeiros oficiais vêm SEMPRE das ferramentas; nunca calcule saldos, parcelas ou projeções por conta própria.`,
+    `Pagamentos, PIX, transferências, investimentos e crédito: use request_payment_or_transfer — o sistema explica que não executa.`,
     `Você é um assistente de software, não uma pessoa. Não é consultor financeiro regulamentado.`,
     `Data local de hoje: ${localDateString(ctx.now, ctx.timezone)} (${formatLongDate(ctx.now, ctx.timezone)}), fuso ${ctx.timezone}.`,
     `Para realizar ações, chame as ferramentas disponíveis. Nunca afirme que algo foi feito sem chamar a ferramenta.`,
@@ -171,14 +179,18 @@ export async function handleUserMessage(deps: OrchestratorDeps, msg: IncomingUse
     ),
   );
 
+  // Roteamento de agente: mídia (áudio/imagem) pode conter vários pedidos ⇒ orquestrador.
+  const agent = msg.media ? routeAgent(undefined, msg.agent) : routeAgent(text, msg.agent);
+  const allowedTools = agent.key === "orchestrator" ? undefined : toolsForAgent(agent.key);
   const started = Date.now();
   let output;
   try {
     output = await deps.model.generate({
-      systemInstruction: systemInstruction(ctx, deps.assistantName),
+      systemInstruction: systemInstruction(ctx, deps.assistantName, agent),
       history: history.reverse().map((h) => ({ role: h.role === "user" ? "user" as const : "model" as const, text: h.content })),
       text: text ?? "Transcreva o áudio/imagem e execute as ações solicitadas pelo titular.",
       media: msg.media,
+      tools: allowedTools,
     });
   } catch {
     await db.asService((q) =>
@@ -195,17 +207,17 @@ export async function handleUserMessage(deps: OrchestratorDeps, msg: IncomingUse
     q.query(
       `insert into ai_usage (workspace_id, user_id, model, operation, input_tokens, output_tokens, estimated_cost_usd, latency_ms)
        values ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [ctx.workspaceId, ctx.userId, output.model, msg.media ? "multimodal" : "chat", output.usage.inputTokens, output.usage.outputTokens,
+      [ctx.workspaceId, ctx.userId, output.model, `${msg.media ? "multimodal" : "chat"}:${agent.key}`, output.usage.inputTokens, output.usage.outputTokens,
         estimateCostUsd(output.usage), Date.now() - started],
     ),
   );
 
   const outcomes = await executeToolCalls(
-    { db, ctx, google: deps.google, conversationId: stored.conversationId, messageId: stored.messageId },
+    { db, ctx, google: deps.google, conversationId: stored.conversationId, messageId: stored.messageId, allowedTools },
     output.functionCalls.slice(0, 10),
     `${msg.provider}:${msg.providerMessageId}`,
   );
   const reply = composeReply(outcomes, output.text);
-  await saveReply(reply, { outcomes: outcomes.map((o) => ({ tool: o.tool, status: o.status, executionId: o.executionId })) });
-  return { conversationId: stored.conversationId, reply, outcomes, duplicate: false };
+  await saveReply(reply, { agent: agent.key, outcomes: outcomes.map((o) => ({ tool: o.tool, status: o.status, executionId: o.executionId })) });
+  return { conversationId: stored.conversationId, reply, outcomes, duplicate: false, agent: { key: agent.key, name: agent.name, title: agent.title } };
 }

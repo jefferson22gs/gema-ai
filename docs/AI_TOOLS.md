@@ -10,6 +10,24 @@ devolve chamadas; o executor (`executor.ts`) valida, autoriza (RLS do ator), reg
 Cada chamada tem registro próprio em `ai_tool_executions` (idempotente por `provider:mensagem:índice`).
 Falha de uma ação não desfaz as demais; a resposta lista o status de cada item.
 
+## Risco (Central de Aprovações)
+
+| Nível | Tipo | Regra |
+|---|---|---|
+| 1 | Consulta | Executa direto |
+| 2 | Operação reversível | Executa; confirma quando os argumentos exigirem (ex.: valor ≥ R$ 5.000, parcelado) |
+| 3 | Ação externa/sensível | **Sempre** pede aprovação |
+| 4 | Operação financeira crítica | **Nunca** executa (bloqueado no executor e por constraint no banco) |
+
+A aprovação guarda `args_hash` (SHA-256 dos argumentos com chaves ordenadas), resumo e `expires_at` (30 min).
+Argumentos de uma ação pendente são imutáveis (trigger). Antes de executar, o servidor revalida hash, expiração e risco.
+
+## Agentes
+
+13 agentes em `src/server/ai/agents.ts`. Roteamento determinístico por palavras-chave: um único especialista casado assume;
+nenhum ou vários ⇒ orquestrador. O especialista só recebe (e só pode executar) as ferramentas do seu domínio.
+Agentes com status `planned` não assumem pedidos até terem ferramentas reais.
+
 ## Catálogo
 
 | Ferramenta | Confirmação | Observações |

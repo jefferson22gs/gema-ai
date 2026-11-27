@@ -7,6 +7,8 @@ export interface ModelInput {
   history: { role: "user" | "model"; text: string }[];
   text?: string;
   media?: { mimeType: string; base64: string };
+  /** Ferramentas declaradas ao modelo (escopo do agente ativo). Ausente = todas. */
+  tools?: ReadonlySet<string>;
 }
 
 export interface ModelOutput {
@@ -50,7 +52,7 @@ export class GeminiModel implements AiModel {
         systemInstruction: input.systemInstruction,
         temperature: 0.2,
         maxOutputTokens: 1024,
-        tools: [{ functionDeclarations: toolDeclarations() }],
+        tools: [{ functionDeclarations: toolDeclarations(input.tools) }],
         toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO } },
         httpOptions: { timeout: this.timeoutMs },
         abortSignal: signal,

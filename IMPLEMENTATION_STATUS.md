@@ -73,7 +73,7 @@
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |
 |---|---|---|---|---|---|---|---|---|---|
 | AG-01 | Agenda | Agenda local + Google Calendar OAuth + sync | P0 | — | Testes | Testada | `google.test.ts` | 74610c2 | BLK-07 |
-| AG-02 | Agenda pública | Página pública de agendamento (disponibilidade sem expor detalhes, anti-duplicidade) | P1 | — | Reserva concorrente não duplica; testes | Pendente | — | — | — |
+| AG-02 | Agenda pública | Página pública de agendamento (disponibilidade sem expor detalhes, anti-duplicidade) | P1 | — | Reserva concorrente não duplica; testes | Testada | tests/unit/booking-slots.test.ts (5: grade, antecedência, folga, horário de verão), tests/db/booking.test.ts (6: privacidade da agenda, 3 reservas concorrentes → 1, idempotência, cancelamento por token, página inativa, isolamento); E2E /agendar; /app/agenda/publica | — | — |
 | AG-03 | Reuniões | Processar transcrição/áudio fornecido → resumo, decisões, tarefas | P1 | AI-04 | Tarefas criadas a partir de transcrição; teste | Pendente | — | — | BLK-04 |
 | TSK-01 | Tarefas | Subtarefas/checklist, comentários, dependências, Kanban, visões Hoje/Semana/Atrasadas | P1 | — | Kanban persiste status; testes | Pendente | — | — | — |
 | TSK-02 | Hábitos | Hábitos e registros | P2 | — | Streak calculado; teste | Pendente | — | — | — |

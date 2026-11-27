@@ -35,6 +35,10 @@ tabelas server-only negadas, super admin sem leitura de mensagens, RLS em 100% d
   só service role, 24 h). Mesma chave e corpo devolve a resposta gravada (`Idempotent-Replayed: true`); corpo diferente → 422;
   em processamento → 409; 5xx libera a chave. Lançamentos, mensagens, webhooks e importações têm dedupe próprio no banco.
 - Exportações (CSV/XLSX/PDF): neutralização de fórmulas (CSV injection) e texto sempre como texto no XLSX.
+- Agenda pública (`/agendar/[slug]`): o visitante usa role `anon` e só alcança funções `security definer` que devolvem
+  intervalos ocupados (início/fim), nunca títulos/descrições. Reserva concorrente: advisory lock por dono + checagem no
+  banco (uma vence, as outras recebem "horário acabou de ser reservado"). Honeypot e limite por IP e por página.
+  Cancelamento por token (só o hash é guardado) e exige clique (pré-visualizadores de e-mail não cancelam). Páginas `noindex`.
 
 ## LGPD
 

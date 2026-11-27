@@ -59,6 +59,9 @@
   lançamentos de novo; pagar fatura não altera o patrimônio. Agente Patrimônio ativo com `net_worth` e `register_asset`.
 - `Idempotency-Key` genérica (tabela `idempotency_keys`) no upload de documentos e na conexão de bancos: reenvio após
   queda de rede não duplica; corpo diferente com a mesma chave é recusado. Upload passa a respeitar add-ons de storage.
+- Agenda pública de agendamento (`/agendar/[endereço]`, configurada em Agenda → Agenda pública): grade semanal com até
+  dois períodos por dia, duração, folga, antecedência e janela; o visitante vê só horários livres (sem detalhes da agenda),
+  reserva concorrente nunca duplica, o compromisso entra na agenda e o dono é notificado; cancelamento por link.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

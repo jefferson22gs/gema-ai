@@ -62,6 +62,16 @@ test.describe("site público (critério 13)", () => {
     expect(api).toEqual([]);
   });
 
+  test("agenda pública: endereço inválido mostra não encontrado; cancelamento exige token e não indexa", async ({ page }) => {
+    // notFound() dentro de <Suspense> (streaming) mantém status 200 e o Next adiciona noindex — comportamento documentado.
+    await page.goto("/agendar/Nome%20Invalido!");
+    await expect(page.getByText(/404|não encontrad/i).first()).toBeVisible();
+    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", /noindex/);
+    await page.goto("/agendar/cancelar");
+    await expect(page.getByText("Link de cancelamento incompleto.")).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  });
+
   test("tema claro alterna e persiste", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Ativar tema claro" }).click();

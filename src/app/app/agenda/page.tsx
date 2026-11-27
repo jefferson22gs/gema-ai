@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarClock, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Link2, MapPin } from "lucide-react";
 import { ActionForm } from "@/components/app/action-form";
 import { Badge, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Skeleton, buttonVariants } from "@/components/ui/primitives";
 import { db } from "@/lib/db";
@@ -150,7 +150,11 @@ async function Calendar({ searchParams }: { searchParams: PageProps<"/app/agenda
 export default function AgendaPage(props: PageProps<"/app/agenda">) {
   return (
     <>
-      <PageHeader title="Agenda" description="Compromissos locais e sincronizados. Conflitos nunca são ignorados silenciosamente." />
+      <PageHeader
+        title="Agenda"
+        description="Compromissos locais e sincronizados. Conflitos nunca são ignorados silenciosamente."
+        actions={<Link href="/app/agenda/publica" className={buttonVariants({ variant: "secondary", size: "sm" })}><Link2 /> Agenda pública</Link>}
+      />
       <Suspense fallback={<Skeleton className="h-96" />}><Calendar searchParams={props.searchParams} /></Suspense>
     </>
   );

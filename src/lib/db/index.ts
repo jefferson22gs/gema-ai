@@ -58,6 +58,15 @@ export const db: Database = {
       return fn(wrap(tx as unknown as Sql));
     })) as Awaited<ReturnType<typeof fn>>;
   },
+  async asAnon(fn) {
+    const sql = getPool();
+    if (!sql) throw new DatabaseNotConfiguredError();
+    return (await sql.begin(async (tx) => {
+      await tx.unsafe("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
+      await tx.unsafe("set local role anon");
+      return fn(wrap(tx as unknown as Sql));
+    })) as Awaited<ReturnType<typeof fn>>;
+  },
 };
 
 export function isDatabaseConfigured(): boolean {

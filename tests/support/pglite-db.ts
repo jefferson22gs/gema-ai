@@ -26,5 +26,11 @@ export function pgliteDatabase(pg: PGlite): Database {
         return fn(wrap(tx));
       });
     },
+    asAnon(fn) {
+      return pg.transaction(async (tx) => {
+        await tx.exec("set local role anon");
+        return fn(wrap(tx));
+      });
+    },
   };
 }

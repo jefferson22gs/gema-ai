@@ -16,9 +16,9 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**AG-02** — página pública de agendamento (disponibilidade sem expor detalhes da agenda, anti-duplicidade,
-confirmação), depois **TSK-01** (subtarefas/Kanban). Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10,
-FIN-11, FIN-13, PAT-01, F1-06.
+**TSK-01** — tarefas: subtarefas/checklist, comentários, dependências, Kanban e visões Hoje/Semana/Atrasadas;
+depois **SHOP-01** (listas de compras compartilhadas) e **FAM-01** (despesas divididas). Concluídas em 27/11/2026:
+SAAS-01, UX-03, UX-04, FIN-10, FIN-11, FIN-13, PAT-01, F1-06, AG-02.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

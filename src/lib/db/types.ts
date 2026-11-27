@@ -10,6 +10,8 @@ export interface Queryable {
 export interface Database {
   asUser<T>(userId: string, fn: (q: Queryable) => Promise<T>): Promise<T>;
   asService<T>(fn: (q: Queryable) => Promise<T>): Promise<T>;
+  /** Visitante sem login (role anon): só alcança funções públicas explicitamente liberadas. */
+  asAnon<T>(fn: (q: Queryable) => Promise<T>): Promise<T>;
 }
 
 export class DatabaseNotConfiguredError extends Error {

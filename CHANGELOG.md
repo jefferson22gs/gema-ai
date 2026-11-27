@@ -28,6 +28,10 @@
 - Vinculação do WhatsApp pelo fluxo V3: código `GEMA-XXXX-XXXX` gerado no painel e enviado pelo usuário ao número oficial
   (uso único, 15 min, bloqueio após 5 falhas/h por número, conflito com outra conta, troca de número, auditoria).
 - Privacidade do canal: saldos, limites e projeções ocultos no WhatsApp por padrão; titular escolhe o que pode aparecer.
+- Papéis ampliados (Proprietário, Administrador, Gestor, Financeiro, Contador, Colaborador, Familiar, Visualizador),
+  permissões por módulo × ação aplicadas no banco (políticas restritivas + override individual), workspace profissional.
+- Convites com token de uso único (7 dias, preso ao e-mail), e-mail de convite, página `/convite/[token]`, tela Membros.
+- **Segurança**: redirecionamento pós-login restrito a caminhos internos conhecidos.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

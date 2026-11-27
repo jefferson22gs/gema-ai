@@ -7,7 +7,8 @@ export type TemplateId =
   | "reminder"
   | "security_alert"
   | "integration_disconnected"
-  | "weekly_summary";
+  | "weekly_summary"
+  | "workspace_invite";
 
 export interface RenderedEmail {
   subject: string;
@@ -54,5 +55,14 @@ export function renderTemplate(id: TemplateId, data: Record<string, string>, app
       return { subject: `Integração desconectada: ${data.integration ?? ""}`, ...layout("Integração desconectada", `A integração ${data.integration ?? ""} precisa ser reconectada.`, { label: "Reconectar", url: `${appUrl}/app/integracoes` }) };
     case "weekly_summary":
       return { subject: "Seu resumo semanal", ...layout("Resumo semanal", data.body ?? "", { label: "Ver relatório", url: `${appUrl}/app/financas` }) };
+    case "workspace_invite":
+      return {
+        subject: `Convite para ${data.workspace ?? "um workspace"} no GEMA AI`,
+        ...layout(
+          "Você foi convidado",
+          `${data.inviter ?? "Um membro"} convidou você para o workspace "${data.workspace ?? ""}" como ${data.role ?? "membro"}.\nO convite vale por 7 dias e só funciona para este e-mail.\nSeus dados pessoais continuam privados no seu workspace pessoal.`,
+          data.link?.startsWith(appUrl) ? { label: "Aceitar convite", url: data.link } : undefined,
+        ),
+      };
   }
 }

@@ -15,6 +15,7 @@ export const APP_NAV = [
 ] as const;
 
 export const APP_NAV_SECONDARY = [
+  { href: "/app/membros", label: "Membros", icon: "users" },
   { href: "/app/configuracoes", label: "Configurações", icon: "settings" },
   { href: "/app/assinatura", label: "Assinatura", icon: "credit" },
   { href: "/app/ajuda", label: "Ajuda", icon: "help" },

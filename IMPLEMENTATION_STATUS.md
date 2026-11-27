@@ -9,9 +9,9 @@
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |
 |---|---|---|---|---|---|---|---|---|---|
 | F1-01 | Tenancy | Workspaces pessoal/família/empresa + RLS + isolamento | P0 | — | Testes de vazamento entre tenants | Testada | `tests/db/rls.test.ts` | 501404c | BLK-01 (real) |
-| F1-02 | Tenancy | Tipo de workspace "profissional" | P1 | — | `kind = 'professional'` aceito, RLS igual | Pendente | — | — | — |
-| F1-03 | Permissões | Papéis ampliados (gestor, financeiro, contador, colaborador, familiar) + permissões por módulo/ação | P0 | F1-01 | Matriz papel×módulo×ação aplicada no banco (função `app.can`) e testada | Pendente | — | — | — |
-| F1-04 | Convites | Fluxo de convite por e-mail (token, expiração, aceite) | P0 | F1-03 | Convite aceito cria membership; token uso único; testes | Pendente | — | — | BLK-09 (envio real) |
+| F1-02 | Tenancy | Tipo de workspace "profissional" | P1 | — | `kind = 'professional'` aceito, RLS igual | Testada | `kind = 'professional'` aceito (migration `20261127000003_roles_permissions.sql`) | — | — |
+| F1-03 | Permissões | Papéis ampliados (gestor, financeiro, contador, colaborador, familiar) + permissões por módulo/ação | P0 | F1-01 | Matriz papel×módulo×ação aplicada no banco (função `app.can`) e testada | Testada | 8 papéis + `role_permissions` + `app.can(ws, módulo, ação)` com override por membro; políticas RESTRITIVAS por módulo; tela `/app/membros`; `tests/db/roles-invitations.test.ts` | — | — |
+| F1-04 | Convites | Fluxo de convite por e-mail (token, expiração, aceite) | P0 | F1-03 | Convite aceito cria membership; token uso único; testes | Testada | Convite por token (hash, 7 dias, uso único, preso ao e-mail), `accept_invitation()` transacional, e-mail `workspace_invite`, página `/convite/[token]`; mesmos testes — envio real BLK-09 | — | BLK-09 (envio real) |
 | F1-05 | Filas | Fila persistente genérica (`system_jobs`) com retry/backoff/DLQ e worker por cron | P0 | — | Job falho reprocessa com backoff e vai para `dead`; teste | Testada | `src/server/jobs/queue.ts` (dedupe, skip locked, backoff, DLQ, lock expirado) plugada no cron; `tests/integrations/queue.test.ts` | — | — |
 | F1-06 | Idempotência | Tabela `idempotency_keys` genérica para APIs públicas/webhooks | P1 | F1-05 | Reenvio com mesma chave retorna resultado anterior | Pendente | — | — | — |
 | F1-07 | Segurança | MFA (TOTP Supabase) + página de segurança/dispositivos | P1 | — | Ativar/desativar TOTP; sessões listadas | Pendente | — | — | BLK-01 |

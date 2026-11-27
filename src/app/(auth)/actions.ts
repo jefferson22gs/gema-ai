@@ -20,7 +20,8 @@ async function ipKey() {
 
 function safeNext(next: FormDataEntryValue | null): string {
   const v = typeof next === "string" ? next : "";
-  return v.startsWith("/app") || v.startsWith("/super-admin") ? v : "/app";
+  // Somente caminhos internos conhecidos (evita open redirect).
+  return /^\/(app|super-admin|convite)(\/|$)/.test(v) && !v.startsWith("//") ? v : "/app";
 }
 
 const signInSchema = z.object({ email: z.email(), password: z.string().min(8).max(128) });

@@ -16,8 +16,9 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**F1-03/F1-04** — papéis ampliados (gestor, financeiro, contador, colaborador, familiar), permissões por módulo/ação
-(função `app.can`) e convites com token de uso único. Depois **WA-05** (ingestão de webhooks via fila) e **WA-07** (inbox).
+**WA-05 + WA-07** — ingestão de webhooks de WhatsApp via fila (responder 2xx rápido; worker processa com retry/DLQ) e
+Central de Conversas (modos IA/humano/copiloto/pausado com lock exclusivo, notas internas, acesso de suporte só com
+autorização e auditoria). Depois **SAAS-01** (planos editáveis no Super Admin, entitlements) e **UX-03** (/demo).
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

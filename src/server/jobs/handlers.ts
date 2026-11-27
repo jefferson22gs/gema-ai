@@ -1,8 +1,9 @@
 import "server-only";
 import { db } from "@/lib/db";
 import type { JobHandler } from "./queue";
-import { refreshRecurringCandidates } from "../services/planning";
 import { DEFAULT_TIMEZONE } from "@/lib/time";
+import { refreshRecurringCandidates } from "../services/planning";
+import { takeSnapshot } from "../services/patrimony";
 import { syncConnection } from "../open-finance/sync";
 import { aiModel, bankProvider, evolutionProvider, googleGateway, metaProvider, whaileysProvider } from "../runtime";
 import { enqueue } from "./queue";
@@ -55,6 +56,27 @@ export const JOB_HANDLERS: Record<string, JobHandler> = {
     );
     for (const c of conns) {
       await db.asService((q) => enqueue(q, "open_finance.sync", { connectionId: c.id, trigger: "scheduled" }, { dedupeKey: `of:daily:${c.id}:${day}` }));
+    }
+  },
+  /**
+   * Fotografia mensal do patrimônio (dia 1): uma por titular e workspace, só para quem já registrou bens,
+   * dívidas ou fotografias (não cria série vazia para quem não usa o módulo).
+   */
+  "patrimony.snapshot": async () => {
+    const owners = await db.asService((q) =>
+      q.query<{ owner_id: string; workspace_id: string; timezone: string | null }>(
+        `select distinct x.owner_id, x.workspace_id, p.timezone from (
+           select owner_id, workspace_id from assets where archived_at is null
+           union select owner_id, workspace_id from debts where status = 'active'
+           union select owner_id, workspace_id from net_worth_snapshots
+         ) x join workspace_members m on m.workspace_id = x.workspace_id and m.user_id = x.owner_id
+         left join profiles p on p.id = x.owner_id limit 5000`,
+      ),
+    );
+    for (const o of owners) {
+      await db.asUser(o.owner_id, (q) =>
+        takeSnapshot({ q, ctx: { userId: o.owner_id, workspaceId: o.workspace_id, timezone: o.timezone || DEFAULT_TIMEZONE, now: new Date(), channel: "automation" } }),
+      );
     }
   },
   /** Reanálise de recorrências de um titular (disparada após importações). */

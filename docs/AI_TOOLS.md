@@ -43,6 +43,14 @@ Agentes com status `planned` não assumem pedidos até terem ferramentas reais.
 | `list_transactions`, `create_task`, `complete_task`, `create_reminder`, `list_reminders`, `search_documents`, `generate_report` | não | |
 | `list_business_integrations` | não | Apenas lista status; nenhuma ação externa |
 | `request_confirmation` | — | Pergunta ao usuário sem executar |
+| `bank_balances` | não | Open Finance somente leitura; informa a data do saldo. Oculto no WhatsApp sem permissão do titular |
+| `list_credit_cards`, `simulate_purchase`, `cashflow_forecast`, `financial_health` | não | Calculados pelo motor determinístico; ocultos no WhatsApp sem permissão |
+| `create_card_purchase` | sim | Parcelas em centavos, idempotente |
+| `create_goal`, `list_goals` | criar: sim | |
+| `create_automation` | sim | Respeita o limite do plano |
+| `net_worth` | não | Patrimônio líquido (agente Patrimônio); oculto no WhatsApp sem permissão |
+| `register_asset` | sim | Valor informado pelo usuário; não é avaliação de mercado |
+| `request_payment_or_transfer` | nunca executa | Risco 4: a IA não move dinheiro; orienta o usuário a fazer no banco |
 
 Confirmações expiram em 30 minutos. No WhatsApp: responder `1`/`sim` ou `2`/`cancelar`.
 

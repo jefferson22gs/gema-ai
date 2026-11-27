@@ -16,8 +16,9 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**PAT-01** — patrimônio (ativos, passivos, snapshots, patrimônio líquido; tabelas já existem em `finance_core`).
-Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10, FIN-11, FIN-13.
+**F1-06** — tabela `idempotency_keys` genérica para APIs/webhooks (resposta repetida para a mesma chave, conflito
+quando o corpo muda), depois **AG-02** (agenda pública de agendamento) e **TSK-01** (subtarefas/Kanban).
+Concluídas em 27/11/2026: SAAS-01, UX-03, UX-04, FIN-10, FIN-11, FIN-13, PAT-01.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

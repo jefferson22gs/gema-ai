@@ -87,8 +87,9 @@ export const AGENTS: AgentDefinition[] = [
   {
     key: "wealth", name: "Patrimônio", title: "Agente patrimonial",
     description: "Ativos, passivos e patrimônio líquido. Não executa ordens nem recomenda investimentos.",
-    capabilities: ["Patrimônio (planejado)", "Simuladores educacionais"], instructions: "Não confunda patrimônio com saldo disponível.",
-    keywords: ["patrimonio", "investimento", "imovel", "veiculo", "seguro", "aposentadoria"], status: "planned",
+    capabilities: ["Patrimônio líquido", "Cadastro de bens", "Liquidez"],
+    instructions: "Não confunda patrimônio com saldo disponível. Bens valem o que o usuário informou (não é avaliação de mercado). Não recomende investimentos.",
+    keywords: ["patrimonio", "meus bens", "imovel", "veiculo", "apartamento"], status: "available",
   },
   {
     key: "automations", name: "Rotina", title: "Agente de automações",

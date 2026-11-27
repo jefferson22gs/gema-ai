@@ -386,6 +386,105 @@ export function detectRecurring(txs: { description: string; amountCents: number;
   return out.sort((a, b) => b.averageCents - a.averageCents);
 }
 
+// ---------------------------------------------------------------- Patrimônio
+
+export type AssetKind = "cash" | "investment" | "property" | "vehicle" | "business" | "other";
+
+export interface NetWorthInput {
+  today: string;
+  /** Bens cadastrados pelo usuário (valor informado por ele, com data da avaliação). */
+  assets: { name: string; kind: AssetKind; valueCents: number; liquid: boolean; valuedOn: string }[];
+  /** Saldos informados pelos bancos (Open Finance). null = banco não informou. */
+  bankAccounts: { name: string; balanceCents: number | null; balanceAt: string | null }[];
+  /** Saldo calculado pelos lançamentos das contas manuais; null quando não há conta manual. */
+  registeredCashCents: number | null;
+  debts: { creditor: string; kind: string; balanceCents: number }[];
+  /** Compras de cartão ainda não pagas (faturas abertas e parcelas futuras). */
+  cards: { name: string; openCents: number }[];
+}
+
+export interface NetWorthLine {
+  group: string;
+  label: string;
+  cents: number;
+  note?: string;
+}
+
+export interface NetWorth {
+  assetsCents: number;
+  liabilitiesCents: number;
+  netWorthCents: number;
+  /** Parte dos ativos com liquidez imediata (contas, caixa e bens marcados como líquidos). */
+  liquidCents: number;
+  assets: NetWorthLine[];
+  liabilities: NetWorthLine[];
+  warnings: string[];
+  assumptions: string[];
+}
+
+const ASSET_GROUP: Record<AssetKind, string> = {
+  cash: "Dinheiro e contas", investment: "Investimentos", property: "Imóveis", vehicle: "Veículos", business: "Participações e negócios", other: "Outros bens",
+};
+
+/**
+ * Patrimônio líquido = ativos − passivos, com regras explícitas contra dupla contagem:
+ * - conta manual ligada a um banco conectado entra pelo saldo do banco, não pelos lançamentos (o chamador exclui);
+ * - compras no cartão entram como passivo enquanto não pagas; o pagamento da fatura reduz o caixa e zera o passivo;
+ * - bens usam o valor informado pelo usuário (não é avaliação de mercado).
+ */
+export function netWorth(i: NetWorthInput): NetWorth {
+  const assets: NetWorthLine[] = [];
+  const liabilities: NetWorthLine[] = [];
+  const warnings: string[] = [];
+  let liquid = 0;
+
+  for (const b of i.bankAccounts) {
+    if (b.balanceCents === null) {
+      warnings.push(`${b.name}: o banco não informou o saldo; a conta ficou fora do cálculo.`);
+      continue;
+    }
+    assets.push({ group: ASSET_GROUP.cash, label: b.name, cents: b.balanceCents, note: b.balanceAt ? `saldo informado pelo banco em ${b.balanceAt.slice(0, 10)}` : undefined });
+    liquid += b.balanceCents;
+  }
+  if (i.registeredCashCents !== null) {
+    assets.push({ group: ASSET_GROUP.cash, label: "Contas registradas no GEMA", cents: i.registeredCashCents, note: "saldo de abertura + lançamentos pagos" });
+    liquid += i.registeredCashCents;
+  }
+  for (const a of i.assets) {
+    assets.push({ group: ASSET_GROUP[a.kind], label: a.name, cents: a.valueCents, note: `valor informado em ${a.valuedOn}` });
+    if (a.liquid) liquid += a.valueCents;
+    if (monthsBetween(a.valuedOn, i.today) >= 12) warnings.push(`${a.name}: valor informado há mais de 12 meses; considere atualizar.`);
+  }
+  for (const d of i.debts) if (d.balanceCents > 0) liabilities.push({ group: "Dívidas", label: d.creditor, cents: d.balanceCents });
+  for (const c of i.cards) if (c.openCents > 0) liabilities.push({ group: "Cartões (compras não pagas)", label: c.name, cents: c.openCents });
+  if (i.debts.some((d) => d.kind === "credit_card" && d.balanceCents > 0) && i.cards.some((c) => c.openCents > 0)) {
+    warnings.push("Há dívida do tipo cartão cadastrada e compras em aberto em cartões: confira se não é o mesmo valor contado duas vezes.");
+  }
+  const sum = (l: NetWorthLine[]) => l.reduce((s, x) => s + x.cents, 0);
+  const assetsCents = sum(assets);
+  const liabilitiesCents = sum(liabilities);
+  return {
+    assetsCents,
+    liabilitiesCents,
+    netWorthCents: assetsCents - liabilitiesCents,
+    liquidCents: Math.max(0, liquid),
+    assets: assets.sort((a, b) => a.group.localeCompare(b.group) || b.cents - a.cents),
+    liabilities: liabilities.sort((a, b) => b.cents - a.cents),
+    warnings,
+    assumptions: [
+      "Bens entram pelo valor que você informou; não é avaliação de mercado.",
+      "Saldos bancários são os informados pelo banco na data indicada.",
+      "Compras parceladas no cartão contam integralmente como passivo até serem pagas.",
+    ],
+  };
+}
+
+/** Variação entre fotografias (null quando não há anterior). */
+export function netWorthChange(current: number, previous: number | null): { cents: number; pct: number | null } | null {
+  if (previous === null) return null;
+  return { cents: current - previous, pct: previous !== 0 ? Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10 : null };
+}
+
 // ---------------------------------------------------------------- Saúde financeira
 
 export interface HealthInputs {

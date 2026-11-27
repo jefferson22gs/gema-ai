@@ -118,6 +118,9 @@ describe("agentes especializados", () => {
     expect(routeAgent("gastei 50 e marca reunião amanhã").key).toBe("orchestrator");
     expect(routeAgent("oi").key).toBe("orchestrator");
     expect(routeAgent("pesquise hotel em Gramado").key).toBe("orchestrator"); // agente planejado não assume
+    expect(routeAgent("qual é o meu patrimônio?").key).toBe("wealth");
+    expect(toolsForAgent("wealth").has("net_worth")).toBe(true);
+    expect(toolsForAgent("wealth").has("create_expense")).toBe(false);
   });
 
   it("agente só recebe ferramentas do seu domínio", () => {

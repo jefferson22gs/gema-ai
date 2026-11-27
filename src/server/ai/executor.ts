@@ -11,7 +11,7 @@ export type ExecutionStatus = "proposed" | "awaiting_confirmation" | "running" |
 export const APPROVAL_TTL_MS = 30 * 60_000;
 
 /** Consultas que expõem saldos/limites/projeções — no WhatsApp dependem de `channel_accounts.show_balances`. */
-const SENSITIVE_ON_CHANNEL = new Set(["bank_balances", "list_credit_cards", "cashflow_forecast", "simulate_purchase", "financial_health"]);
+const SENSITIVE_ON_CHANNEL = new Set(["bank_balances", "list_credit_cards", "cashflow_forecast", "simulate_purchase", "financial_health", "net_worth"]);
 
 export interface ToolCallRequest {
   name: string;

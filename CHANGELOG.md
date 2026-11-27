@@ -53,6 +53,10 @@
   sob RLS e permissão `reports.export`, auditado.
 - **Segurança**: exportação CSV de lançamentos não protegia contra fórmulas (`=`, `+`, `-`, `@`); agora neutraliza, e o
   XLSX grava texto sempre como texto.
+- Patrimônio (`/app/financas/patrimonio`): bens com valor informado e data, saldos bancários, contas registradas,
+  dívidas e compras de cartão não pagas, com liquidez, avisos (saldo não informado, avaliação antiga, possível dupla
+  contagem) e fotografias mensais automáticas. Conta ligada a banco conectado entra pelo saldo do banco, sem somar os
+  lançamentos de novo; pagar fatura não altera o patrimônio. Agente Patrimônio ativo com `net_worth` e `register_asset`.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

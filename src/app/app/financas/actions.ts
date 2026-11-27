@@ -7,6 +7,7 @@ import { toCents } from "@/lib/money";
 import { localDateString } from "@/lib/time";
 import { DomainError } from "@/server/context";
 import * as cards from "@/server/services/cards";
+import * as patrimony from "@/server/services/patrimony";
 import * as planning from "@/server/services/planning";
 import { actorContext, requireSession } from "@/server/session";
 import type { ActionState } from "../actions";
@@ -107,6 +108,43 @@ export async function createDebtAction(_: ActionState, form: FormData): Promise<
     await withDeps((d) => planning.createDebt(d, { creditor, kind: str(form, "kind"), balanceCents: balance, monthlyRatePct: rate, minPaymentCents: minPayment }));
     return "Dívida cadastrada.";
   });
+}
+
+export async function createAssetAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const value = toCents(str(form, "value") ?? "");
+  const name = str(form, "name");
+  const kind = z.enum(patrimony.ASSET_KINDS).safeParse(form.get("kind"));
+  const valuedOn = str(form, "valuedOn");
+  if (!name || value === null || !kind.success) return { error: "Informe nome, tipo e valor do bem." };
+  if (valuedOn && !/^\d{4}-\d{2}-\d{2}$/.test(valuedOn)) return { error: "Data inválida." };
+  return act(async () => {
+    await withDeps((d) => patrimony.createAsset(d, {
+      name, kind: kind.data, valueCents: value, liquid: form.get("liquid") === "on", valuedOn,
+      visibility: form.get("shared") === "on" ? "workspace" : "private",
+    }));
+    return "Bem cadastrado.";
+  });
+}
+
+export async function revalueAssetAction(_: ActionState, form: FormData): Promise<ActionState> {
+  const id = z.string().uuid().safeParse(form.get("id"));
+  const value = toCents(str(form, "value") ?? "");
+  if (!id.success || value === null) return { error: "Informe o novo valor." };
+  return act(async () => {
+    await withDeps((d) => patrimony.revalueAsset(d, id.data, value));
+    return "Valor atualizado.";
+  });
+}
+
+export async function archiveAssetAction(form: FormData): Promise<void> {
+  const id = z.string().uuid().parse(form.get("id"));
+  await withDeps((d) => patrimony.archiveAsset(d, id));
+  refresh();
+}
+
+export async function snapshotAction(): Promise<void> {
+  await withDeps((d) => patrimony.takeSnapshot(d));
+  refresh();
 }
 
 export async function refreshRecurringAction(): Promise<void> {

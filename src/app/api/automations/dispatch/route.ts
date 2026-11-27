@@ -26,6 +26,8 @@ async function handle(req: Request) {
   const automations = await runDueAutomations(db, now);
   // Varredura diária do Open Finance (job idempotente por dia).
   await db.asService((q) => enqueue(q, "open_finance.schedule", {}, { dedupeKey: `of:schedule:${now.toISOString().slice(0, 10)}` }));
+  // Fotografia mensal do patrimônio (idempotente por mês).
+  if (now.getUTCDate() === 1) await db.asService((q) => enqueue(q, "patrimony.snapshot", {}, { dedupeKey: `nw:${now.toISOString().slice(0, 7)}` }));
   const jobs = await runJobs(db, JOB_HANDLERS, now);
   const outbox = await dispatchOutbox({ db, now, sendEmail: sendTransactionalEmail, whatsapp: primaryWhatsApp(), sendPush: sendWebPush() });
   return json({ ok: true, at: now.toISOString(), reminders, automations, jobs, outbox });

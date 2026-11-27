@@ -11,6 +11,7 @@ import * as reminders from "../services/reminders";
 import { buildBriefing } from "../services/briefing";
 import * as cards from "../services/cards";
 import * as planning from "../services/planning";
+import * as patrimony from "../services/patrimony";
 import { canAfford } from "../finance/engine";
 import { AUTOMATION_TEMPLATES, createRule } from "../automations/engine";
 import { localDateString } from "@/lib/time";
@@ -640,6 +641,43 @@ const toolList = [
       const h = await planning.healthScore(rt);
       if (!h) return { summary: "Ainda não há meses completos de lançamentos para calcular o indicador.", data: null };
       return { summary: `Saúde financeira: ${h.score}/100. ${h.components.map((c) => `${c.label} ${c.points}/${c.max}`).join("; ")}. ${h.disclaimer}`, data: h };
+    },
+  }),
+  defineTool({
+    name: "net_worth",
+    description: "Patrimônio líquido: bens informados, saldos de contas, dívidas e compras de cartão não pagas, com avisos e hipóteses.",
+    schema: z.object({}),
+    risk: 1,
+    agent: "wealth",
+    requiresConfirmation: () => false,
+    describe: () => "Calcular patrimônio",
+    async execute(_a, rt) {
+      const nw = await patrimony.computeNetWorth(rt);
+      if (!nw.assets.length && !nw.liabilities.length) return { summary: "Ainda não há bens, contas ou dívidas registrados para calcular o patrimônio.", data: null };
+      return {
+        summary: `Patrimônio líquido ${formatCents(nw.netWorthCents)} (ativos ${formatCents(nw.assetsCents)}, passivos ${formatCents(nw.liabilitiesCents)}, liquidez ${formatCents(nw.liquidCents)}).${nw.warnings.length ? ` Avisos: ${nw.warnings.join(" ")}` : ""} ${nw.assumptions[0]}`,
+        data: { netWorthCents: nw.netWorthCents, assetsCents: nw.assetsCents, liabilitiesCents: nw.liabilitiesCents, liquidCents: nw.liquidCents },
+      };
+    },
+  }),
+  defineTool({
+    name: "register_asset",
+    description: "Cadastra um bem do usuário (imóvel, veículo, investimento, dinheiro guardado) com o valor que ele informou.",
+    schema: z.object({
+      name: z.string().min(1).max(120),
+      kind: z.enum(patrimony.ASSET_KINDS),
+      value: z.union([z.number(), z.string()]).describe("Valor em reais informado pelo usuário"),
+      liquid: z.boolean().optional().describe("Pode virar dinheiro rapidamente?"),
+    }),
+    risk: 2,
+    agent: "wealth",
+    requiresConfirmation: () => true,
+    describe: (a) => `Cadastrar bem "${a.name}" (${patrimony.ASSET_KIND_LABEL[a.kind]}) por ${formatCents(toCents(a.value) ?? 0)}`,
+    async execute(a, rt) {
+      const cents = toCents(a.value);
+      if (cents === null) throw new DomainError("invalid", "Valor inválido.");
+      const id = await patrimony.createAsset(rt, { name: a.name, kind: a.kind, valueCents: cents, liquid: a.liquid });
+      return { summary: `Bem "${a.name}" cadastrado por ${formatCents(cents)}. Atualize o valor quando reavaliar.`, data: { id } };
     },
   }),
   defineTool({

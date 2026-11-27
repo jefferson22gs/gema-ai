@@ -12,7 +12,7 @@
 | F1-02 | Tenancy | Tipo de workspace "profissional" | P1 | — | `kind = 'professional'` aceito, RLS igual | Pendente | — | — | — |
 | F1-03 | Permissões | Papéis ampliados (gestor, financeiro, contador, colaborador, familiar) + permissões por módulo/ação | P0 | F1-01 | Matriz papel×módulo×ação aplicada no banco (função `app.can`) e testada | Pendente | — | — | — |
 | F1-04 | Convites | Fluxo de convite por e-mail (token, expiração, aceite) | P0 | F1-03 | Convite aceito cria membership; token uso único; testes | Pendente | — | — | BLK-09 (envio real) |
-| F1-05 | Filas | Fila persistente genérica (`system_jobs`) com retry/backoff/DLQ e worker por cron | P0 | — | Job falho reprocessa com backoff e vai para `dead`; teste | Pendente | — | — | — |
+| F1-05 | Filas | Fila persistente genérica (`system_jobs`) com retry/backoff/DLQ e worker por cron | P0 | — | Job falho reprocessa com backoff e vai para `dead`; teste | Testada | `src/server/jobs/queue.ts` (dedupe, skip locked, backoff, DLQ, lock expirado) plugada no cron; `tests/integrations/queue.test.ts` | — | — |
 | F1-06 | Idempotência | Tabela `idempotency_keys` genérica para APIs públicas/webhooks | P1 | F1-05 | Reenvio com mesma chave retorna resultado anterior | Pendente | — | — | — |
 | F1-07 | Segurança | MFA (TOTP Supabase) + página de segurança/dispositivos | P1 | — | Ativar/desativar TOTP; sessões listadas | Pendente | — | — | BLK-01 |
 | F1-08 | UX | Command palette (Ctrl+K) + busca global | P1 | — | Busca em transações, tarefas, contatos, documentos, eventos sob RLS | Pendente | — | — | — |
@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | AI-01 | Ferramentas | Registry Zod + executor com estados/idempotência/auditoria | P0 | — | Testes | Testada | `tests/ai/assistant.test.ts` | 501404c | BLK-04 |
 | AI-02 | Risco | Classificação de risco 1–4 por ferramenta; nível 4 bloqueado; aprovação vinculada ao hash exato dos argumentos | P0 | AI-01 | Alterar argumentos invalida aprovação; nível 4 nunca executa; testes | Testada | migration `20261126000002_approvals.sql`; `tests/ai/approvals-agents.test.ts` | — | — |
-| AI-03 | Aprovações | Central de aprovações (tela + API: aprovar/rejeitar/expirar, revalidação) | P0 | AI-02 | Tela lista pendências reais; ações auditadas | Pendente | — | — | — |
+| AI-03 | Aprovações | Central de aprovações (tela + API: aprovar/rejeitar/expirar, revalidação) | P0 | AI-02 | Tela lista pendências reais; ações auditadas | Implementada | Tela `/app/aprovacoes` (pendentes com risco/expiração, aprovar/rejeitar, histórico). Backend testado em `tests/ai/approvals-agents.test.ts`; E2E autenticado pendente (BLK-01) | — | — |
 | AI-04 | Agentes | Catálogo de 13 agentes especializados (tabela `ai_agents` + versões), roteamento por intenção, subconjunto de ferramentas por agente | P0 | AI-01 | Orquestrador escolhe agente; agente só vê suas ferramentas; Super Admin edita prompt versionado | Testada | `src/server/ai/agents.ts` (13 agentes, roteamento, escopo de ferramentas); `tests/ai/approvals-agents.test.ts` (edição no Super Admin: pendente) | — | — |
 | AI-05 | Orquestração | Planos multi-etapa (`execution_plans`), dependências, cancelamento, tracing | P1 | AI-04 | Pedido composto vira plano com passos e status; teste | Pendente | — | — | — |
 | AI-06 | Memória | Memória com categorias, visualizar/corrigir/excluir/exportar, separação por workspace, pgvector | P1 | — | Memória só do titular+workspace; teste de contaminação | Pendente | — | — | BLK-04 (embeddings) |
@@ -56,7 +56,7 @@
 | FIN-09 | Saúde | Indicador de saúde financeira com metodologia transparente | P1 | FIN-08 | Fórmula documentada e testada; não é score de crédito | Testada | `financialHealth` com metodologia; `healthScore` retorna null sem dados (backend; tela pendente) | — | — |
 | FIN-10 | Regras | Regras de categorização do usuário (aprendidas de correções) | P1 | — | Correção vira regra opcional; teste | Pendente | — | — | — |
 | FIN-11 | Importação | Importar CSV/OFX com deduplicação | P1 | FIN-04 | OFX/CSV reimportado não duplica; teste | Pendente | — | — | — |
-| FIN-12 | Dashboard | Dashboard financeiro avançado com gráficos, filtros e modo privacidade | P0 | FIN-03 | Gráficos com dados reais; ocultar valores | Pendente | — | — | — |
+| FIN-12 | Dashboard | Dashboard financeiro avançado com gráficos, filtros e modo privacidade | P0 | FIN-03 | Gráficos com dados reais; ocultar valores | Implementada | Telas `/app/financas/cartoes`, `/fluxo` (gráfico de saldo projetado + saúde + recorrências), `/planejamento` (metas e dívidas). E2E autenticado pendente (BLK-01) | — | — |
 | FIN-13 | Relatórios | PDF/XLSX + proteção CSV injection | P1 | — | Exportação sem fórmula executável; teste | Pendente | — | — | — |
 | PAT-01 | Patrimônio | Ativos, passivos, snapshots, patrimônio líquido | P1 | — | Cálculo testado | Pendente | — | — | — |
 
@@ -113,7 +113,7 @@
 ## Fase 10 — Experiência
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |
 |---|---|---|---|---|---|---|---|---|---|
-| UX-01 | Navegação | Barra mobile Início · Finanças · GEMA (central) · Agenda · Mais | P1 | — | E2E mobile | Pendente | — | — | — |
+| UX-01 | Navegação | Barra mobile Início · Finanças · GEMA (central) · Agenda · Mais | P1 | — | E2E mobile | Implementada | Barra mobile Início · Finanças · GEMA AI (central destacado) · Agenda · Mais + página `/app/mais` | — | — |
 | UX-02 | Tema | Tema automático (sistema) além de claro/escuro | P2 | — | Preferência persistida | Pendente | — | — | — |
 | UX-03 | Demo | `/demo` interativo com dados fictícios isolados (sem banco real, sem envios) | P1 | — | Visitante navega módulos; nenhuma chamada externa; E2E | Pendente | — | — | — |
 | UX-04 | Landing | Landing V3 (agentes, Open Finance, WhatsApp, família, empresas) sem métricas inventadas | P1 | — | E2E a11y | Pendente | — | — | — |

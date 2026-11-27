@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, Calendar, CheckSquare, CreditCard, FileText, Folder, HelpCircle, Home, Plug, Settings, Sparkles, Sunrise, Users, Wallet, Zap,
+  Bell, Calendar, CheckSquare, CreditCard, FileText, Folder, HelpCircle, Home, Menu, Plug, Settings, ShieldCheck, Sparkles, Sunrise, Users, Wallet, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAV, APP_NAV_SECONDARY, MOBILE_NAV } from "./nav-items";
 
 const ICONS = {
   home: Home, sparkles: Sparkles, calendar: Calendar, wallet: Wallet, check: CheckSquare, folder: Folder, users: Users, file: FileText,
-  sunrise: Sunrise, zap: Zap, plug: Plug, bell: Bell, settings: Settings, credit: CreditCard, help: HelpCircle,
+  sunrise: Sunrise, zap: Zap, plug: Plug, bell: Bell, settings: Settings, credit: CreditCard, help: HelpCircle, shield: ShieldCheck, menu: Menu,
 };
 
 function isActive(path: string, href: string) {
@@ -51,10 +51,26 @@ export function MobileTabBar() {
   const path = usePathname();
   return (
     <nav aria-label="Navegação rápida" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-5 items-end">
         {MOBILE_NAV.map((item) => {
           const Icon = ICONS[item.icon];
           const active = isActive(path, item.href);
+          if ("primary" in item && item.primary) {
+            return (
+              <li key={item.href} className="flex justify-center">
+                <Link
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className="-mt-5 flex flex-col items-center gap-1 text-[11px] font-medium text-gold"
+                >
+                  <span className="grid size-14 place-items-center rounded-full bg-gold text-on-gold shadow-card ring-4 ring-bg">
+                    <Icon className="size-6" aria-hidden />
+                  </span>
+                  {item.label}
+                </Link>
+              </li>
+            );
+          }
           return (
             <li key={item.href}>
               <Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex flex-col items-center gap-1 py-2.5 text-[11px]", active ? "text-gold" : "text-muted")}>

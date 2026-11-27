@@ -16,9 +16,10 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**FIN-12 + AI-03** — telas: Finanças → Cartões (limite, faturas, parcelas, simulador), Metas, Dívidas, Fluxo de caixa (gráfico),
-Recorrências, Saúde financeira; e Central de Aprovações (`/app/aprovacoes`). O backend dessas telas já está Testado.
-Depois: OF-01 (schema Open Finance + `BankProvider`) e F1-05 (fila genérica).
+**OF-01 → OF-04** — Open Finance: schema (`bank_connections`, consentimentos, contas, snapshots de saldo, sync logs) + RLS,
+`BankProvider` + adaptador Pluggy (contrato levantado em 27/11/2026: `/auth`, `/connect_token`, `/v2/transactions` por cursor,
+webhook com `X-Pluggy-Signature`), sync idempotente para `transactions` via fila, Central de Bancos e Consentimentos.
+Depois: WA-04 (vinculação inbound) e F1-03/F1-04 (permissões e convites).
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

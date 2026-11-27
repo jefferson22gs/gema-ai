@@ -1,6 +1,7 @@
 export const APP_NAV = [
   { href: "/app", label: "Início", icon: "home" },
   { href: "/app/assistente", label: "Assistente", icon: "sparkles" },
+  { href: "/app/aprovacoes", label: "Aprovações", icon: "shield" },
   { href: "/app/agenda", label: "Agenda", icon: "calendar" },
   { href: "/app/financas", label: "Finanças", icon: "wallet" },
   { href: "/app/tarefas", label: "Tarefas", icon: "check" },
@@ -19,10 +20,11 @@ export const APP_NAV_SECONDARY = [
   { href: "/app/ajuda", label: "Ajuda", icon: "help" },
 ] as const;
 
+/** Barra inferior mobile: Início · Finanças · GEMA (central) · Agenda · Mais. */
 export const MOBILE_NAV = [
   { href: "/app", label: "Início", icon: "home" },
-  { href: "/app/agenda", label: "Agenda", icon: "calendar" },
-  { href: "/app/assistente", label: "Gema", icon: "sparkles" },
   { href: "/app/financas", label: "Finanças", icon: "wallet" },
-  { href: "/app/tarefas", label: "Tarefas", icon: "check" },
+  { href: "/app/assistente", label: "GEMA AI", icon: "sparkles", primary: true },
+  { href: "/app/agenda", label: "Agenda", icon: "calendar" },
+  { href: "/app/mais", label: "Mais", icon: "menu" },
 ] as const;

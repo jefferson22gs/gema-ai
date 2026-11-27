@@ -16,8 +16,8 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**SAAS-01** — planos editáveis no Super Admin (preço e limites fora do código), entitlements por módulo aplicados no
-servidor, cupons. Depois **UX-03** (/demo com dados fictícios isolados) e **UX-04** (landing V3).
+**UX-03** — `/demo` interativo com dados fictícios isolados (sem banco, sem envios externos). Depois **UX-04**
+(landing V3 sem métricas inventadas). SAAS-01 concluída (Testada) em 27/11/2026.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |
@@ -25,4 +25,6 @@ servidor, cupons. Depois **UX-03** (/demo com dados fictícios isolados) e **UX-
 | 26/11/2026 | Docs canônicos permanecem em `docs/` (nomes da V1); `CLAUDE.md` mapeia nomes pedidos na V3 | Evitar duplicação de documentação |
 | 26/11/2026 | Paleta: manter Dark Executive (grafite + dourado) | Prompt V3 manda preservar identidade existente; esmeralda era "sugerida, caso compatível" |
 | 26/11/2026 | Open Finance começa somente leitura | Exigência regulatória e do prompt |
+| 27/11/2026 | Recursos "core" (finanças manuais, agenda, tarefas, documentos, IA no painel) nunca bloqueiam; pagos exigem assinatura ativa/trial/carência | Usuário nunca perde acesso aos próprios dados por inadimplência |
+| 27/11/2026 | Novo usuário: trial do Premium no workspace pessoal; plano `executive` substituído por `business` (antigo mantido inativo) | Experiência completa no teste; não quebrar assinaturas existentes |
 | 26/11/2026 | Cálculo financeiro em módulo puro `src/server/finance/` testado | IA não pode ser calculadora oficial |

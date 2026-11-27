@@ -10,6 +10,7 @@ Migrations em `supabase/migrations/` (ordem lexical):
 | `…04_platform_ops.sql` | integrations, encrypted_oauth_tokens, oauth_states, channel_accounts, provider_webhook_events, conversations, messages, ai_tool_executions, ai_usage, automation_rules, automation_runs, notification_outbox, notification_deliveries, email_messages, push_subscriptions, documents, document_extractions, system_jobs, rate_limits + `rate_limit_hit()` |
 | `…05_rls.sql` | RLS em todas as tabelas, políticas e `write_audit()` |
 | `…06_storage_and_reference_data.sql` | bucket privado `documents` + políticas, planos, categorias globais, feature flags |
+| `20261127000005_saas_plans.sql` | `plan_features` (catálogo de entitlements; `core` nunca bloqueia), colunas de plano (anual, teste, ativo, destaque, tipos de workspace), plano `business`, `coupons` (só service role), `plan_addons`/`subscription_addons`, `app.entitled()`, `app.plan_limit()` (plano + add-ons), trigger que sincroniza `workspaces.plan_id` com a assinatura, `create_workspace`/novo usuário com trial do plano |
 
 ## Convenções
 

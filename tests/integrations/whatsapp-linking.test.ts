@@ -124,6 +124,17 @@ describe("privacidade do canal", () => {
     expect(r2.replies[0].text).toMatch(/Nenhum banco conectado/);
   });
 
+  it("plano sem WhatsApp (ou trial vencido): número vinculado recebe aviso e a IA não é chamada", async () => {
+    let calls = 0;
+    const model = new ScriptedModel(() => { calls++; return { text: "não devia" }; });
+    await pg.query("update subscriptions set trial_ends_at = now() - interval '1 day' where workspace_id = $1", [bob.personalWorkspaceId]);
+    const m = inbound("ENT-1", "gastei 30 no mercado", "5551955554444");
+    const r = await ingestWebhook({ db, provider, model, google: null }, m.raw, m.headers);
+    expect(r.replies[0].text).toMatch(/não está ativo no seu plano/);
+    expect(calls).toBe(0);
+    await pg.query("update subscriptions set trial_ends_at = now() + interval '14 days' where workspace_id = $1", [bob.personalWorkspaceId]);
+  });
+
   it("titular não consegue alterar status/endereço do canal pelo cliente (só preferências)", async () => {
     await expect(db.asUser(bob.id, (q) => q.query("update channel_accounts set address = '+5511999999999' where user_id = $1", [bob.id]))).rejects.toThrow(/permission denied/);
   });

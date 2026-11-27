@@ -14,7 +14,12 @@ const STATUS = { trialing: ["Em teste", "gold"], active: ["Ativa", "success"], p
 
 async function Subscription() {
   const s = await requireSession();
-  const { sub, plans, usage } = await db.asUser(s.userId, async (q) => ({
+  const { sub, plans, usage, features } = await db.asUser(s.userId, async (q) => ({
+    // Recursos efetivos: plano + estado da assinatura (mesma regra aplicada no servidor).
+    features: await q.query<{ key: string; label: string; core: boolean; ok: boolean }>(
+      "select key, label, core, app.entitled($1, key) as ok from plan_features order by sort_order",
+      [s.workspace.id],
+    ),
     sub: (await q.query<{ status: keyof typeof STATUS; plan_id: string; trial_ends_at: Date | null; current_period_end: Date | null; grace_until: Date | null }>(
       "select status, plan_id, trial_ends_at, current_period_end, grace_until from subscriptions where workspace_id = $1",
       [s.workspace.id],
@@ -54,6 +59,17 @@ async function Subscription() {
           </CardBody>
         </Card>
       </div>
+      <Card>
+        <CardHeader title="Recursos deste workspace" description="Recursos essenciais nunca são bloqueados: seus dados continuam acessíveis mesmo sem assinatura ativa." />
+        <CardBody className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <p key={f.key} className="flex items-center gap-2">
+              <Badge tone={f.ok ? "success" : "neutral"}>{f.ok ? "Liberado" : "Fora do plano"}</Badge>
+              <span className={f.ok ? "" : "text-muted"}>{f.label}</span>
+            </p>
+          ))}
+        </CardBody>
+      </Card>
       <Card>
         <CardHeader title="Planos disponíveis" />
         <CardBody className="grid gap-3 md:grid-cols-4">

@@ -105,7 +105,7 @@
 ## Fase 9 — Comercial
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |
 |---|---|---|---|---|---|---|---|---|---|
-| SAAS-01 | Planos | Planos editáveis no Super Admin (preço não fixo no código), entitlements por módulo, cupons, add-ons | P0 | — | Plano criado no admin aparece em /planos; limites aplicados | Pendente | — | — | — |
+| SAAS-01 | Planos | Planos editáveis no Super Admin (preço não fixo no código), entitlements por módulo, cupons, add-ons | P0 | — | Plano criado no admin aparece em /planos; limites aplicados | Testada | tests/db/saas-plans.test.ts (11), whatsapp-linking (entitlement); /super-admin/planos edita preço/limites/recursos/cupons; /planos lê do banco | — | — |
 | SAAS-02 | Billing | Asaas para assinaturas (checkout, webhook idempotente, upgrade/downgrade) | P1 | SAAS-01, PAY-01 | Testes de contrato | Pendente | — | — | BLK-06 |
 | SAAS-03 | Custos | Custos de provedores configuráveis, custo por cliente/plano, margem, alertas | P1 | — | Cálculo testado; valores vindos de configuração | Pendente | — | — | — |
 | ADM-01 | Super Admin | Agentes/prompts versionados, feature flags editáveis, health real | P1 | AI-04 | Edição auditada | Pendente | — | — | — |

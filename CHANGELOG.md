@@ -36,6 +36,11 @@
   com troca atômica (`lock_version`) que impede IA e humano de responderem ao mesmo tempo; notas internas; ações executadas.
 - Acesso do suporte às conversas só com autorização do titular no chamado, justificativa, prazo curto e auditoria por leitura.
 - Webhooks de WhatsApp agora só verificam e enfileiram (2xx imediato); o processamento roda na fila com retry/dead-letter.
+- Planos SaaS editáveis no Super Admin (preço mensal/anual, teste, limites, recursos, visibilidade) com auditoria antes/depois;
+  cupons (percentual ou valor fixo, validade, usos, plano e ciclo) e add-ons que somam limites. Novo plano Business.
+- Entitlements aplicados no servidor: WhatsApp (ingestão), Open Finance (+ limite de conexões), automações (limite) e
+  convites (equipe + limite de membros). Recursos essenciais e dados do usuário nunca são bloqueados.
+- **Correção**: `/planos` tinha preços fixos no código; agora lê do banco. Workspace acompanha o plano da assinatura.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

@@ -6,6 +6,7 @@ import type { GoogleGateway } from "../integrations/google/types";
 import { logWebhook, markWebhook } from "../webhooks/log";
 import { consumeLinkCode, extractLinkCode, type InboundLinkResult } from "./verification";
 import { enqueue } from "../jobs/queue";
+import { isEntitled } from "../billing/plans";
 import type { InboundMessage, MessagingProvider } from "./types";
 
 export interface IngestDeps {
@@ -152,6 +153,10 @@ async function handleInbound(deps: IngestDeps, event: InboundMessage): Promise<R
   await deps.db.asService((q) =>
     q.query("update channel_accounts set last_inbound_at = $3 where provider = $1 and address = $2 and status = 'verified'", [deps.provider.name, event.from, ctx.now]),
   );
+  // Entitlement no servidor: sem WhatsApp no plano (ou assinatura vencida) a mensagem não é processada pela IA.
+  if (!(await deps.db.asService((q) => isEntitled(q, ctx.workspaceId, "whatsapp")))) {
+    return { text: "O assistente pelo WhatsApp não está ativo no seu plano atual. Veja Assinatura no painel do GEMA AI." };
+  }
 
   const text = event.text?.trim() ?? "";
   if (text && (CONFIRM.test(text) || CANCEL.test(text))) {

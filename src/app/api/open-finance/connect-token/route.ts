@@ -1,4 +1,6 @@
+import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { requireEntitlement, requireUnderLimit } from "@/server/billing/plans";
 import { errorResponse, json, rateLimit, sameOrigin } from "@/server/http";
 import { bankProvider } from "@/server/runtime";
 import { getSession } from "@/server/session";
@@ -16,6 +18,13 @@ export async function POST(req: Request) {
   if (!(await rateLimit(`of:token:${s.userId}`, 10, 600))) return json({ error: "Muitas tentativas. Aguarde alguns minutos." }, 429);
   const body = (await req.json().catch(() => ({}))) as { itemId?: unknown };
   try {
+    await db.asUser(s.userId, async (q) => {
+      await requireEntitlement(q, s.workspace.id, "open_finance", "Open Finance");
+      if (typeof body.itemId !== "string") {
+        const [c] = await q.query<{ n: number }>("select count(*)::int as n from bank_connections where workspace_id = $1 and revoked_at is null", [s.workspace.id]);
+        await requireUnderLimit(q, s.workspace.id, "bank_connections", c.n, "conexões bancárias");
+      }
+    });
     const appUrl = env.appUrl();
     const webhookUrl = appUrl.startsWith("https://") ? `${appUrl}/api/webhooks/pluggy` : undefined; // Pluggy só aceita HTTPS público
     const r = await provider.createConnectToken({

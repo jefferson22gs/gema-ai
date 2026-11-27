@@ -4,6 +4,7 @@ import { addDaysToDateString, formatTime, localDateString, localParts, zonedToUt
 import { buildBriefing, briefingToText } from "../services/briefing";
 import { monthSummary } from "../services/finance";
 import { backoffSeconds, MAX_ATTEMPTS } from "../notifications/dispatcher";
+import { requireEntitlement, requireUnderLimit } from "../billing/plans";
 
 /**
  * Motor gatilho → condição → ação. Templates:
@@ -186,6 +187,9 @@ export async function createRule(
   input: { workspaceId: string; ownerId: string; template: AutomationTemplate; config?: RuleRow["config"]; channels: string[]; timezone: string; now: Date },
 ): Promise<string> {
   const tpl = AUTOMATION_TEMPLATES[input.template];
+  await requireEntitlement(q, input.workspaceId, "automations", "Automações");
+  const [c] = await q.query<{ n: number }>("select count(*)::int as n from automation_rules where workspace_id = $1 and enabled", [input.workspaceId]);
+  await requireUnderLimit(q, input.workspaceId, "automations", c.n, "automações ativas");
   const config = { ...tpl.defaults, ...(input.config ?? {}) };
   const next = nextScheduledRun({ template: input.template, config }, input.timezone, input.now);
   const [row] = await q.query<{ id: string }>(

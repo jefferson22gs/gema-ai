@@ -1,6 +1,7 @@
 import type { Queryable } from "@/lib/db/types";
 import { randomToken, sha256Hex } from "@/lib/crypto";
 import { DomainError } from "../context";
+import { requireEntitlement, requireUnderLimit } from "../billing/plans";
 
 export const ROLES = ["admin", "manager", "finance", "accountant", "member", "family", "viewer"] as const;
 export type InviteRole = (typeof ROLES)[number];
@@ -26,6 +27,14 @@ export async function createInvitation(
   const [ws] = await q.query<{ kind: string }>("select kind from workspaces where id = $1", [input.workspaceId]);
   if (!ws) throw new DomainError("not_found", "Workspace não encontrado.");
   if (ws.kind === "personal") throw new DomainError("invalid", "O workspace pessoal não aceita membros. Crie um workspace de família ou empresa.");
+  await requireEntitlement(q, input.workspaceId, "team", "Convidar membros");
+  const [counts] = await q.query<{ n: number }>(
+    `select ((select count(*) from workspace_members where workspace_id = $1)
+           + (select count(*) from workspace_invitations where workspace_id = $1 and lower(email) <> $2
+                and accepted_at is null and revoked_at is null and expires_at > now()))::int as n`,
+    [input.workspaceId, email],
+  );
+  await requireUnderLimit(q, input.workspaceId, "members", counts.n, "membros (incluindo convites pendentes)");
   const token = randomToken(32);
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
   // Convite anterior pendente para o mesmo e-mail é revogado (um convite ativo por pessoa).

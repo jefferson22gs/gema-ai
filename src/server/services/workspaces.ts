@@ -95,5 +95,5 @@ export interface PlanRow {
 }
 
 export async function listPlans(q: Queryable): Promise<PlanRow[]> {
-  return q.query<PlanRow>("select id, name, description, price_cents, limits, features from plans where is_public order by sort_order");
+  return q.query<PlanRow>("select id, name, description, price_cents, limits, features from plans where is_public and active order by sort_order");
 }

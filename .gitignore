@@ -24,6 +24,7 @@ npm-debug.log*
 .lint-out.txt
 .test-out.txt
 .e2e-out.txt
+.*-out.txt
 
 # env files — nunca versionar segredos
 .env*

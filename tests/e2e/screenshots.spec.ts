@@ -9,6 +9,7 @@ test.skip(!process.env.SCREENSHOTS, "somente sob demanda");
 const pages = [
   ["home", "/"],
   ["planos", "/planos"],
+  ["demo", "/demo"],
   ["entrar", "/entrar"],
   ["painel-nao-configurado", "/app"],
 ] as const;

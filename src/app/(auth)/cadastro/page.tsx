@@ -7,7 +7,7 @@ export default function CadastroPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Crie sua conta</h1>
-      <p className="mb-8 mt-1 text-sm text-muted">14 dias de teste, sem cartão.</p>
+      <p className="mb-8 mt-1 text-sm text-muted">Período de teste sem cartão.</p>
       <SignUpForm
         configured={Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)}
         googleEnabled={process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true"}

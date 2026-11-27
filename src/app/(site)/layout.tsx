@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/primitives";
 const nav = [
   { href: "/recursos", label: "Recursos" },
   { href: "/como-funciona", label: "Como funciona" },
+  { href: "/demo", label: "Demonstração" },
   { href: "/planos", label: "Planos" },
   { href: "/seguranca", label: "Segurança" },
 ];

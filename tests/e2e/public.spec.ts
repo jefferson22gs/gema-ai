@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PUBLIC_PAGES = ["/", "/recursos", "/como-funciona", "/planos", "/seguranca", "/privacidade", "/termos", "/contato", "/entrar", "/cadastro"];
+const PUBLIC_PAGES = ["/", "/recursos", "/como-funciona", "/demo", "/planos", "/seguranca", "/privacidade", "/termos", "/contato", "/entrar", "/cadastro"];
 
 test.describe("site público (critério 13)", () => {
   for (const path of PUBLIC_PAGES) {
@@ -25,6 +25,41 @@ test.describe("site público (critério 13)", () => {
   test("demonstração é sinalizada como ilustrativa", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Demonstração ilustrativa")).toBeVisible();
+  });
+
+  test("/demo: dados fictícios sinalizados, módulos navegáveis e nenhuma chamada externa", async ({ page }) => {
+    const external: string[] = [];
+    const api: string[] = [];
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (u.hostname !== "localhost" && u.hostname !== "127.0.0.1") external.push(r.url());
+      else if (u.pathname.startsWith("/api/")) api.push(u.pathname);
+    });
+    await page.goto("/demo");
+    await expect(page.getByText("Dados fictícios")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Saldo projetado (45 dias)" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Cartões" }).click();
+    await page.getByLabel("Valor (R$)").fill("30000");
+    await expect(page.getByText("Ultrapassa o limite")).toBeVisible();
+    await page.getByLabel("Valor (R$)").fill("600");
+    await expect(page.getByText("Cabe no limite")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Assistente" }).click();
+    for (let i = 0; i < 4; i++) await page.getByRole("button", { name: /^Enviar:/ }).click();
+    await expect(page.getByText(/não são executados pela IA/)).toBeVisible();
+    await page.getByRole("button", { name: "Confirmar" }).click();
+    await expect(page.getByText(/nada é gravado/)).toBeVisible();
+
+    await page.getByRole("tab", { name: "Metas e dívidas" }).click();
+    await expect(page.getByText("Reserva de emergência")).toBeVisible();
+    await page.getByRole("tab", { name: "Agenda" }).click();
+    await expect(page.getByText("conflito")).toBeVisible();
+
+    const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+    expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+    expect(external).toEqual([]);
+    expect(api).toEqual([]);
   });
 
   test("tema claro alterna e persiste", async ({ page }) => {

@@ -16,8 +16,8 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**UX-03** — `/demo` interativo com dados fictícios isolados (sem banco, sem envios externos). Depois **UX-04**
-(landing V3 sem métricas inventadas). SAAS-01 concluída (Testada) em 27/11/2026.
+**FIN-11** — importação CSV/OFX com deduplicação (prévia antes de gravar, idempotente), seguida de **FIN-10**
+(regras de categorização aprendidas das correções). SAAS-01, UX-03 e UX-04 concluídas (Testadas) em 27/11/2026.
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

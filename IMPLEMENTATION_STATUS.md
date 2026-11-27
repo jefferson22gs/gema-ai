@@ -115,8 +115,8 @@
 |---|---|---|---|---|---|---|---|---|---|
 | UX-01 | Navegação | Barra mobile Início · Finanças · GEMA (central) · Agenda · Mais | P1 | — | E2E mobile | Implementada | Barra mobile Início · Finanças · GEMA AI (central destacado) · Agenda · Mais + página `/app/mais` | — | — |
 | UX-02 | Tema | Tema automático (sistema) além de claro/escuro | P2 | — | Preferência persistida | Pendente | — | — | — |
-| UX-03 | Demo | `/demo` interativo com dados fictícios isolados (sem banco real, sem envios) | P1 | — | Visitante navega módulos; nenhuma chamada externa; E2E | Pendente | — | — | — |
-| UX-04 | Landing | Landing V3 (agentes, Open Finance, WhatsApp, família, empresas) sem métricas inventadas | P1 | — | E2E a11y | Pendente | — | — | — |
+| UX-03 | Demo | `/demo` interativo com dados fictícios isolados (sem banco real, sem envios) | P1 | — | Visitante navega módulos; nenhuma chamada externa; E2E | Testada | tests/unit/demo-scenario.test.ts (5); E2E /demo (axe, 0 requisições externas/API, interação nos 5 módulos); docs/screenshots/*-demo.png | — | — |
+| UX-04 | Landing | Landing V3 (agentes, Open Finance, WhatsApp, família, empresas) sem métricas inventadas | P1 | — | E2E a11y | Testada | Landing com agentes, Open Finance, família, empresa e CTA /demo; tests/unit/marketing-claims.test.ts (14 páginas); E2E a11y das páginas públicas | — | — |
 | UX-05 | Treinamento | Central "O que posso pedir ao GEMA?" + trilhas | P2 | AI-04 | Conteúdo ligado às ferramentas reais | Pendente | — | — | — |
 | UX-06 | Push | UI de inscrição Web Push | P1 | — | Inscrição gravada em `push_subscriptions` | Pendente | — | — | — |
 | APP-01 | Nativo | Preparação Capacitor + requisitos de lojas | P2 | — | Docs + config | Pendente | — | — | BLK-12 |

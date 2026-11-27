@@ -41,6 +41,10 @@
 - Entitlements aplicados no servidor: WhatsApp (ingestão), Open Finance (+ limite de conexões), automações (limite) e
   convites (equipe + limite de membros). Recursos essenciais e dados do usuário nunca são bloqueados.
 - **Correção**: `/planos` tinha preços fixos no código; agora lê do banco. Workspace acompanha o plano da assinatura.
+- `/demo` público: cenário fictício sinalizado (finanças, cartões com simulador, metas e dívidas, agenda e conversa
+  roteirizada) calculado pelo motor financeiro real, sem banco, sem IA e sem nenhuma requisição externa.
+- Landing V3: agentes especializados, Open Finance somente leitura, família e empresa, garantias de segurança e chamada
+  para a demonstração. Removidos "14 dias" fixo e nome real do exemplo; teste impede métricas/preços inventados.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CheckCircle2, FileText, MessageSquareText, ShieldCheck, Users, Wallet } from "lucide-react";
+import { ArrowRight, Briefcase, CalendarClock, CheckCircle2, FileText, Landmark, MessageSquareText, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
 import { Badge, buttonVariants } from "@/components/ui/primitives";
 
 export const metadata: Metadata = {
@@ -9,13 +9,24 @@ export const metadata: Metadata = {
 };
 
 const useCases = [
-  { icon: Wallet, title: "Finanças pessoais", text: "Registre gastos e receitas por mensagem, acompanhe orçamento e contas a vencer." },
+  { icon: Wallet, title: "Finanças pessoais", text: "Gastos por mensagem, orçamento, cartões com faturas e parcelas, metas, dívidas e fluxo de caixa projetado." },
+  { icon: Landmark, title: "Open Finance", text: "Conecte bancos pelo fluxo oficial, só para leitura. O GEMA nunca pede sua senha bancária nem movimenta dinheiro." },
   { icon: CalendarClock, title: "Agenda executiva", text: "Compromissos com detecção de conflitos, fuso horário correto e integração com Google Agenda." },
   { icon: CheckCircle2, title: "Tarefas e projetos", text: "Prioridades, prazos e lembretes recorrentes que respeitam seu horário local." },
-  { icon: Users, title: "Família e empresa", text: "Workspaces separados com permissões. O que é pessoal continua pessoal." },
+  { icon: Users, title: "Família", text: "Workspace familiar com papéis e convites. O que é pessoal continua pessoal." },
+  { icon: Briefcase, title: "Empresa", text: "Workspace empresarial com permissões por módulo para equipe, financeiro e contador." },
   { icon: FileText, title: "Documentos", text: "Comprovantes em armazenamento privado, com extração revisada por você antes de lançar." },
-  { icon: MessageSquareText, title: "Painel e WhatsApp", text: "Converse pelo painel ou pelo WhatsApp após verificar seu número." },
+  { icon: MessageSquareText, title: "Painel e WhatsApp", text: "Converse pelo painel ou pelo WhatsApp, depois de vincular seu número com um código de uso único." },
 ];
+
+const agents = [
+  ["Financeiro", "lançamentos, cartões, simulações"],
+  ["Agenda", "compromissos e conflitos"],
+  ["Tarefas", "prioridades e prazos"],
+  ["Planejamento", "metas, dívidas, fluxo de caixa"],
+  ["Documentos", "comprovantes e extração"],
+  ["Automações", "rotinas e alertas"],
+] as const;
 
 export default function Home() {
   return (
@@ -34,9 +45,9 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/cadastro" className={buttonVariants({ size: "lg" })}>
-                Começar teste de 14 dias <ArrowRight />
+                Começar teste grátis <ArrowRight />
               </Link>
-              <Link href="/como-funciona" className={buttonVariants({ variant: "secondary", size: "lg" })}>Como funciona</Link>
+              <Link href="/demo" className={buttonVariants({ variant: "secondary", size: "lg" })}>Ver demonstração</Link>
             </div>
             <p className="mt-4 text-xs text-subtle">Sem cartão no teste. Cobrança só será ativada após configuração do provedor de pagamento.</p>
           </div>
@@ -52,7 +63,7 @@ export default function Home() {
                 <p className="text-fg">✓ 2 despesas registradas, total R$ 125,00</p>
                 <p className="mt-1 text-xs text-muted">Almoço R$ 85,00 (Alimentação) · Combustível R$ 40,00 (Combustível)</p>
               </div>
-              <p className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-gold-soft px-4 py-2.5 text-fg">Marca reunião com Jefferson amanhã às 10</p>
+              <p className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-gold-soft px-4 py-2.5 text-fg">Marca reunião com o fornecedor amanhã às 10</p>
               <div className="max-w-[90%] rounded-2xl rounded-bl-sm border border-border bg-bg-elevated px-4 py-3">
                 <p className="text-fg">⏸ Conflito com “Dentista” às 10:30. Confirma criar mesmo assim?</p>
                 <div className="mt-2 flex gap-2 text-xs">
@@ -69,7 +80,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <h2 id="casos" className="text-2xl font-semibold tracking-tight sm:text-3xl">Um assessor para cada parte da rotina</h2>
           <p className="mt-2 max-w-2xl text-muted">Para pessoas, famílias e profissionais — com ferramentas e permissões por workspace.</p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {useCases.map(({ icon: Icon, title, text }) => (
               <article key={title} className="rounded-xl border border-border bg-surface p-5">
                 <Icon className="size-5 text-gold" aria-hidden />
@@ -78,6 +89,28 @@ export default function Home() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="agentes">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <Sparkles className="size-6 text-gold" aria-hidden />
+            <h2 id="agentes" className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">Agentes especializados, uma conversa só</h2>
+            <p className="mt-3 text-muted">
+              Você fala com a GEMA; ela encaminha o pedido ao agente certo, que só tem acesso às ferramentas da própria área. Contas oficiais
+              (saldos, parcelas, projeções) são feitas por um motor financeiro determinístico, não pela IA.
+            </p>
+            <Link href="/demo" className={buttonVariants({ variant: "link", className: "mt-4" })}>Experimentar na demonstração <ArrowRight /></Link>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {agents.map(([name, scope]) => (
+              <li key={name} className="rounded-lg border border-border bg-surface px-4 py-3">
+                <p className="text-sm font-medium">Agente {name}</p>
+                <p className="text-xs text-muted">{scope}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -96,7 +129,9 @@ export default function Home() {
             {[
               "Isolamento por workspace com Row Level Security no banco",
               "Tokens de integrações criptografados e revogáveis",
-              "Mensagens de WhatsApp aceitas só de números verificados",
+              "Mensagens de WhatsApp aceitas só de números verificados; saldos ocultos no canal por padrão",
+              "Open Finance somente leitura, com consentimento revogável a qualquer momento",
+              "Transferências e pagamentos nunca executados pela IA",
               "Exportação e exclusão de dados conforme a LGPD",
               "Limites de uso e custo para evitar surpresas",
             ].map((t) => (

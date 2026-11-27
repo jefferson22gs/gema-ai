@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, Calendar, CheckSquare, CreditCard, FileText, Folder, HelpCircle, Home, Menu, Plug, Settings, ShieldCheck, Sparkles, Sunrise, Users, Wallet, Zap,
+  Bell, Calendar, CheckSquare, CreditCard, FileText, Folder, HelpCircle, Home, Menu, MessagesSquare, Plug, Settings, ShieldCheck, Sparkles, Sunrise, Users, Wallet, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAV, APP_NAV_SECONDARY, MOBILE_NAV } from "./nav-items";
 
 const ICONS = {
   home: Home, sparkles: Sparkles, calendar: Calendar, wallet: Wallet, check: CheckSquare, folder: Folder, users: Users, file: FileText,
-  sunrise: Sunrise, zap: Zap, plug: Plug, bell: Bell, settings: Settings, credit: CreditCard, help: HelpCircle, shield: ShieldCheck, menu: Menu,
+  sunrise: Sunrise, zap: Zap, plug: Plug, bell: Bell, settings: Settings, credit: CreditCard, help: HelpCircle, shield: ShieldCheck, menu: Menu, messages: MessagesSquare,
 };
 
 function isActive(path: string, href: string) {

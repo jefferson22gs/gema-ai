@@ -1,6 +1,7 @@
 export const APP_NAV = [
   { href: "/app", label: "Início", icon: "home" },
   { href: "/app/assistente", label: "Assistente", icon: "sparkles" },
+  { href: "/app/conversas", label: "Conversas", icon: "messages" },
   { href: "/app/aprovacoes", label: "Aprovações", icon: "shield" },
   { href: "/app/agenda", label: "Agenda", icon: "calendar" },
   { href: "/app/financas", label: "Finanças", icon: "wallet" },

@@ -5,6 +5,7 @@ import { handleUserMessage, type IncomingUserMessage } from "../ai/orchestrator"
 import type { GoogleGateway } from "../integrations/google/types";
 import { logWebhook, markWebhook } from "../webhooks/log";
 import { consumeLinkCode, extractLinkCode, type InboundLinkResult } from "./verification";
+import { enqueue } from "../jobs/queue";
 import type { InboundMessage, MessagingProvider } from "./types";
 
 export interface IngestDeps {
@@ -49,11 +50,61 @@ interface ChannelOwner {
  * (telefone isolado no payload não autentica ninguém); 5) dedupe por provider_message_id;
  * 6) confirmação/cancelamento de ações pendentes ou orquestração da IA; 7) resposta pelo mesmo canal.
  */
+/** Processamento síncrono (aceite + processamento no mesmo request). Usado em testes e como fallback. */
 export async function ingestWebhook(deps: IngestDeps, rawBody: string, headers: Headers): Promise<IngestOutcome> {
+  const accepted = await verifyAndLog(deps, rawBody, headers);
+  if (accepted.status !== "accepted") return { status: accepted.status, reason: accepted.reason, replies: [] };
+  const replies: IngestOutcome["replies"] = [];
+  for (const event of accepted.events) {
+    const r = await processInboundEvent(deps, event);
+    if (r) replies.push(r);
+  }
+  await markWebhook(deps.db, accepted.logId, replies.length ? "processed" : "ignored");
+  return { status: replies.length ? "processed" : "ignored", replies };
+}
+
+/**
+ * Aceite assíncrono (WA-05): verifica assinatura, registra, deduplica e ENFILEIRA um job por mensagem
+ * (`whatsapp.inbound`, dedupe por provider+id). O webhook responde 2xx em milissegundos; o worker
+ * processa com retry/backoff/dead-letter.
+ */
+export async function acceptWebhook(deps: Pick<IngestDeps, "db" | "provider">, rawBody: string, headers: Headers): Promise<{ status: "rejected" | "ignored" | "duplicate" | "queued"; queued: number }> {
+  const accepted = await verifyAndLog(deps, rawBody, headers);
+  if (accepted.status !== "accepted") return { status: accepted.status, queued: 0 };
+  let queued = 0;
+  for (const event of accepted.events) {
+    if (event.fromMe) continue;
+    const r = await deps.db.asService((q) =>
+      enqueue(q, "whatsapp.inbound", { provider: deps.provider.name, event: { ...event, timestamp: event.timestamp.toISOString() } }, {
+        dedupeKey: `wa:${deps.provider.name}:${event.providerMessageId}`,
+        maxAttempts: 4,
+      }),
+    );
+    if (r.created) queued++;
+  }
+  await markWebhook(deps.db, accepted.logId, queued ? "processed" : "ignored");
+  return { status: queued ? "queued" : "ignored", queued };
+}
+
+/** Processa um evento já verificado (worker da fila ou modo síncrono) e responde pelo canal. */
+export async function processInboundEvent(deps: IngestDeps, event: InboundMessage): Promise<IngestOutcome["replies"][number] | null> {
+  const reply = await handleInbound(deps, event);
+  if (!reply) return null;
+  const sent = reply.confirm
+    ? await deps.provider.sendInteractiveIfSupported(event.from, reply.text, CONFIRM_BUTTONS)
+    : await deps.provider.sendText(event.from, reply.text);
+  return { to: event.from, text: reply.text, delivered: sent.ok };
+}
+
+async function verifyAndLog(
+  deps: Pick<IngestDeps, "db" | "provider">,
+  rawBody: string,
+  headers: Headers,
+): Promise<{ status: "rejected" | "ignored" | "duplicate"; reason?: string } | { status: "accepted"; events: InboundMessage[]; logId: number | null; reason?: string }> {
   const received = await deps.provider.receive(rawBody, headers);
   if (!received.verified) {
     await logWebhook(deps.db, { provider: deps.provider.name, providerEventId: null, signatureValid: false, status: "rejected", reason: received.reason });
-    return { status: "rejected", reason: received.reason, replies: [] };
+    return { status: "rejected", reason: received.reason };
   }
   const log = await logWebhook(deps.db, {
     provider: deps.provider.name,
@@ -63,23 +114,9 @@ export async function ingestWebhook(deps: IngestDeps, rawBody: string, headers: 
     reason: received.reason,
     payload: { count: received.events.length, types: received.events.map((e) => e.type) },
   });
-  if (log.duplicate) return { status: "duplicate", replies: [] };
-  if (!received.events.length) return { status: "ignored", reason: received.reason, replies: [] };
-
-  const replies: IngestOutcome["replies"] = [];
-  let processed = 0;
-  for (const event of received.events) {
-    const reply = await handleInbound(deps, event);
-    if (reply) {
-      const sent = reply.confirm
-        ? await deps.provider.sendInteractiveIfSupported(event.from, reply.text, CONFIRM_BUTTONS)
-        : await deps.provider.sendText(event.from, reply.text);
-      replies.push({ to: event.from, text: reply.text, delivered: sent.ok });
-      processed++;
-    }
-  }
-  await markWebhook(deps.db, log.id, processed ? "processed" : "ignored");
-  return { status: processed ? "processed" : "ignored", replies };
+  if (log.duplicate) return { status: "duplicate" };
+  if (!received.events.length) return { status: "ignored", reason: received.reason };
+  return { status: "accepted", events: received.events, logId: log.id, reason: received.reason };
 }
 
 async function handleInbound(deps: IngestDeps, event: InboundMessage): Promise<Reply | null> {
@@ -147,6 +184,7 @@ async function handleInbound(deps: IngestDeps, event: InboundMessage): Promise<R
       { text: text || undefined, media, provider: channelProvider(deps.provider.name), providerMessageId: event.providerMessageId },
     );
     if (result.duplicate) return null; // já respondido anteriormente
+    if (result.suppressed) return null; // atendimento humano, pausado ou sugestão de copiloto: nada é enviado
     return { text: result.reply, confirm: result.outcomes.some((o) => o.status === "awaiting_confirmation") };
   } catch (e) {
     return { text: e instanceof Error && /mídia|grande|vazia/.test(e.message) ? e.message : "Não consegui processar sua mensagem agora." };

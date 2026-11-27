@@ -4,14 +4,30 @@ import type { JobHandler } from "./queue";
 import { refreshRecurringCandidates } from "../services/planning";
 import { DEFAULT_TIMEZONE } from "@/lib/time";
 import { syncConnection } from "../open-finance/sync";
-import { bankProvider } from "../runtime";
+import { aiModel, bankProvider, evolutionProvider, googleGateway, metaProvider, whaileysProvider } from "../runtime";
 import { enqueue } from "./queue";
+import { processInboundEvent } from "../messaging/ingest";
+import type { InboundMessage, MessagingProvider } from "../messaging/types";
+
+function providerByName(name: unknown): MessagingProvider | null {
+  if (name === "evolution") return evolutionProvider();
+  if (name === "meta_cloud") return metaProvider();
+  if (name === "baileys_whaileys") return whaileysProvider();
+  return null;
+}
 
 /**
  * Registro central de handlers da fila. Cada handler recebe payload validado e roda com o
  * contexto do titular (RLS), nunca com acesso amplo, salvo jobs de sistema explícitos.
  */
 export const JOB_HANDLERS: Record<string, JobHandler> = {
+  /** Mensagem de WhatsApp já verificada no webhook; processada fora do request (WA-05). */
+  "whatsapp.inbound": async (payload) => {
+    const provider = providerByName(payload.provider);
+    if (!provider) throw new Error(`canal ${String(payload.provider)} não configurado`);
+    const raw = payload.event as InboundMessage & { timestamp: string };
+    await processInboundEvent({ db, provider, model: aiModel(), google: googleGateway() }, { ...raw, timestamp: new Date(raw.timestamp) });
+  },
   /** Sincronização de uma conexão Open Finance (inicial, webhook, manual ou agendada). */
   "open_finance.sync": async (payload) => {
     const provider = bankProvider();

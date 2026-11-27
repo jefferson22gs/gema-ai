@@ -16,9 +16,8 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**WA-05 + WA-07** — ingestão de webhooks de WhatsApp via fila (responder 2xx rápido; worker processa com retry/DLQ) e
-Central de Conversas (modos IA/humano/copiloto/pausado com lock exclusivo, notas internas, acesso de suporte só com
-autorização e auditoria). Depois **SAAS-01** (planos editáveis no Super Admin, entitlements) e **UX-03** (/demo).
+**SAAS-01** — planos editáveis no Super Admin (preço e limites fora do código), entitlements por módulo aplicados no
+servidor, cupons. Depois **UX-03** (/demo com dados fictícios isolados) e **UX-04** (landing V3).
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

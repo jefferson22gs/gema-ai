@@ -32,6 +32,10 @@
   permissões por módulo × ação aplicadas no banco (políticas restritivas + override individual), workspace profissional.
 - Convites com token de uso único (7 dias, preso ao e-mail), e-mail de convite, página `/convite/[token]`, tela Membros.
 - **Segurança**: redirecionamento pós-login restrito a caminhos internos conhecidos.
+- Central de Conversas (`/app/conversas`): modos IA automática, atendimento humano, copiloto (sugere sem enviar) e IA pausada,
+  com troca atômica (`lock_version`) que impede IA e humano de responderem ao mesmo tempo; notas internas; ações executadas.
+- Acesso do suporte às conversas só com autorização do titular no chamado, justificativa, prazo curto e auditoria por leitura.
+- Webhooks de WhatsApp agora só verificam e enfileiram (2xx imediato); o processamento roda na fila com retry/dead-letter.
 
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).

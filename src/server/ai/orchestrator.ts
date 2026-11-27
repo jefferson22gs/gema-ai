@@ -28,6 +28,10 @@ export interface AssistantReply {
   outcomes: ExecutionOutcome[];
   duplicate: boolean;
   agent?: { key: AgentKey; name: string; title: string };
+  /** Modo da conversa no momento da decisão. Fora de "ai", nada é enviado automaticamente. */
+  mode?: "ai" | "human" | "copilot" | "paused";
+  /** true = a resposta NÃO deve ser enviada ao canal (atendimento humano/pausado ou sugestão do copiloto). */
+  suppressed?: boolean;
 }
 
 export interface OrchestratorDeps {
@@ -148,13 +152,43 @@ export async function handleUserMessage(deps: OrchestratorDeps, msg: IncomingUse
   }
 
   const saveReply = async (reply: string, meta: Record<string, unknown> = {}) => {
+    // Sugestão de copiloto é registrada como nota do sistema (não aparece como resposta enviada).
+    const role = meta.copilot_suggestion ? "system" : "assistant";
     await db.asUser(ctx.userId, (q) =>
       q.query(
-        `insert into messages (conversation_id, workspace_id, owner_id, role, content, metadata) values ($1, $2, $3, 'assistant', $4, $5)`,
-        [stored.conversationId, ctx.workspaceId, ctx.userId, reply, JSON.stringify({ reply_to: msg.providerMessageId, ...meta })],
+        `insert into messages (conversation_id, workspace_id, owner_id, role, content, metadata, author_kind) values ($1, $2, $3, $4, $5, $6, $7)`,
+        [stored.conversationId, ctx.workspaceId, ctx.userId, role, reply, JSON.stringify({ reply_to: msg.providerMessageId, ...meta }), meta.copilot_suggestion ? "system" : "ai"],
       ),
     );
   };
+
+  // Exclusão mútua IA × humano: o modo é lido no momento da decisão (após gravar a mensagem).
+  const [conv] = await db.asUser(ctx.userId, (q) =>
+    q.query<{ mode: "ai" | "human" | "copilot" | "paused" }>("update conversations set last_inbound_at = now() where id = $1 returning mode", [stored.conversationId]),
+  );
+  const mode = conv?.mode ?? "ai";
+  if (mode === "human" || mode === "paused") {
+    return { conversationId: stored.conversationId, reply: "", outcomes: [], duplicate: false, mode, suppressed: true };
+  }
+  if (mode === "copilot") {
+    // Copiloto: sugere resposta sem executar ferramentas nem enviar ao canal.
+    let suggestion = "Sem sugestão (assistente de IA não configurado).";
+    if (deps.model) {
+      try {
+        const out = await deps.model.generate({
+          systemInstruction: `${systemInstruction(ctx, deps.assistantName)}\nMODO COPILOTO: escreva apenas uma sugestão de resposta curta para o atendente humano revisar. Não chame ferramentas.`,
+          history: [],
+          text: text ?? "[mídia recebida]",
+          tools: new Set(),
+        });
+        suggestion = out.text.trim() || suggestion;
+      } catch {
+        suggestion = "Não foi possível gerar sugestão agora.";
+      }
+    }
+    await saveReply(suggestion, { copilot_suggestion: true, sent: false });
+    return { conversationId: stored.conversationId, reply: suggestion, outcomes: [], duplicate: false, mode, suppressed: true };
+  }
 
   if (!deps.model) {
     const reply = "O assistente de IA ainda não está configurado nesta instalação (Gemini: Não configurado). Você pode usar as telas de Agenda, Finanças e Tarefas normalmente.";

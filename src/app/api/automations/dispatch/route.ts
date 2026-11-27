@@ -9,7 +9,7 @@ import { sendWebPush } from "@/server/notifications/push";
 import { primaryWhatsApp } from "@/server/runtime";
 import { dispatchDueReminders } from "@/server/services/reminders";
 import { JOB_HANDLERS } from "@/server/jobs/handlers";
-import { runJobs } from "@/server/jobs/queue";
+import { enqueue, runJobs } from "@/server/jobs/queue";
 
 /**
  * Job agendado (Vercel Cron / Supabase pg_cron via pg_net). Autenticado por CRON_SECRET.
@@ -24,6 +24,8 @@ async function handle(req: Request) {
   const now = new Date();
   const reminders = await db.asService((q) => dispatchDueReminders(q, now));
   const automations = await runDueAutomations(db, now);
+  // Varredura diária do Open Finance (job idempotente por dia).
+  await db.asService((q) => enqueue(q, "open_finance.schedule", {}, { dedupeKey: `of:schedule:${now.toISOString().slice(0, 10)}` }));
   const jobs = await runJobs(db, JOB_HANDLERS, now);
   const outbox = await dispatchOutbox({ db, now, sendEmail: sendTransactionalEmail, whatsapp: primaryWhatsApp(), sendPush: sendWebPush() });
   return json({ ok: true, at: now.toISOString(), reminders, automations, jobs, outbox });

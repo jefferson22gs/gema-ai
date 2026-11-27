@@ -16,10 +16,9 @@ entrada em `BLOCKERS.md`, e o trabalho segue.
 9. Demais P1/P2 conforme backlog.
 
 ## Próxima tarefa executável
-**OF-01 → OF-04** — Open Finance: schema (`bank_connections`, consentimentos, contas, snapshots de saldo, sync logs) + RLS,
-`BankProvider` + adaptador Pluggy (contrato levantado em 27/11/2026: `/auth`, `/connect_token`, `/v2/transactions` por cursor,
-webhook com `X-Pluggy-Signature`), sync idempotente para `transactions` via fila, Central de Bancos e Consentimentos.
-Depois: WA-04 (vinculação inbound) e F1-03/F1-04 (permissões e convites).
+**WA-04** — vinculação do WhatsApp por código enviado pelo usuário ao número oficial (inbound), com uso único,
+expiração, limite de tentativas, conflito de número e auditoria. Depois **F1-03/F1-04** (papéis ampliados, permissões por
+módulo/ação, convites com token) e **WA-05** (ingestão de webhooks via fila).
 
 ## Registro de decisões
 | Data | Decisão | Motivo |

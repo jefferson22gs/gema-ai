@@ -8,7 +8,7 @@ Itens que dependem de ação humana, contratação, credencial ou aprovação. C
 | BLK-02 | Domínio de produção / deploy Vercel | Informar domínio, importar repo na Vercel, DNS Registro.br → Cloudflare | Webhooks WhatsApp, OAuth Google, PWA instalável real | 19/11/2026 |
 | BLK-03 | Instância `gema-ai` na Evolution/Whaileys não criada | Autorizar `evo.sh create` / `wh.sh create` (requer BLK-02) e parear o número | WA-* homologação, Fluxos A/B/C/M | 20/11/2026 |
 | BLK-04 | `GEMINI_API_KEY` | Criar chave no Google AI Studio / Vertex e definir teto de custo | IA real, transcrição, OCR, pesquisa com grounding | 19/11/2026 |
-| BLK-05 | Pluggy (Open Finance) | Conta Pluggy (sandbox é gratuita) → `PLUGGY_CLIENT_ID/SECRET`; contrato de produção depende de aprovação | OF-* homologação, Fluxo D | 26/11/2026 |
+| BLK-05 | Pluggy (Open Finance) | Conta Pluggy (plano gratuito só permite o conector de sandbox "Pluggy Bank") → `PLUGGY_CLIENT_ID/SECRET` + signing secret de webhook `PLUGGY_WEBHOOK_SECRET`; app em HTTPS público (BLK-02). Bancos reais exigem contrato pago (decisão do proprietário) | OF-02..04 homologação, Fluxo D | 26/11/2026 |
 | BLK-06 | Asaas (cobranças SaaS e clientes) | Conta sandbox Asaas → `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET` | PAY-*, SAAS-*, Fluxos J/N | 26/11/2026 |
 | BLK-07 | Google Cloud OAuth (Calendar, People, Gmail, Drive, Meet) | Projeto GCP, tela de consentimento, verificação do app para escopos sensíveis/restritos (Gmail/Drive) | AG-*, MAIL-*, DRV-*, MEET-* | 19/11/2026 |
 | BLK-08 | Provedor fiscal homologado (NFS-e) | Escolher provedor (ex.: emissor homologado/padrão nacional), certificado digital A1 da empresa de teste | FIS-* emissão, Fluxo K | 26/11/2026 |

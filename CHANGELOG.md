@@ -17,6 +17,15 @@
 - 13 agentes especializados com roteamento determinístico e escopo de ferramentas por agente.
 - Novas ferramentas: cartões, compra parcelada, "posso comprar?", fluxo de caixa, metas, saúde financeira, automações.
 
+### 27/11/2026
+- Telas: Finanças → Cartões, Fluxo de caixa (gráfico, saúde financeira, recorrências), Metas e dívidas; Central de Aprovações;
+  navegação mobile com GEMA AI central e página Mais.
+- Fila persistente (`system_jobs`) com dedupe, backoff exponencial, dead-letter e recuperação de lock, rodando no cron.
+- Open Finance (somente leitura): `BankProvider` + Pluggy (contrato da doc oficial: `/v2/transactions` por cursor, webhook
+  `X-Pluggy-Signature`), sincronização idempotente via fila, varredura diária, Central de Bancos e Consentimentos, revogação
+  que exclui o item no provedor, widget oficial `pluggy-connect-sdk` (CSP liberada só para `connect.pluggy.ai`).
+  Ferramenta de IA `bank_balances` informa a data do saldo (não finge tempo real).
+
 ### 20/11/2026
 - Canal Whaileys com botões ✅ Confirmar/Cancelar (`7009035`).
 - Evolution 2.3.7 compartilhada: token da instância e `x-evo-secret` (`a6bb4d6`).

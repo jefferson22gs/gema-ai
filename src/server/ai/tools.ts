@@ -479,6 +479,27 @@ const toolList = [
     },
   }),
   defineTool({
+    name: "bank_balances",
+    description: "Saldos das contas bancárias conectadas via Open Finance, com a data/hora informada pelo banco (não é tempo real).",
+    schema: z.object({}),
+    risk: 1,
+    agent: "finance",
+    requiresConfirmation: () => false,
+    describe: () => "Consultar saldos bancários",
+    async execute(_a, rt) {
+      const rows = await rt.q.query<{ name: string; institution_name: string; balance_cents: number | null; balance_at: Date | null; status: string }>(
+        `select a.name, c.institution_name, a.balance_cents, a.balance_at, c.status from bank_accounts a
+         join bank_connections c on c.id = a.connection_id
+         where a.workspace_id = $1 and a.kind = 'bank' and c.revoked_at is null order by c.institution_name, a.name`,
+        [rt.ctx.workspaceId],
+      );
+      if (!rows.length) return { summary: "Nenhum banco conectado. Conecte em Finanças → Bancos (opcional).", data: [] };
+      const total = rows.reduce((s, r) => s + (r.balance_cents ?? 0), 0);
+      const parts = rows.map((r) => `${r.institution_name} · ${r.name}: ${r.balance_cents === null ? "indisponível" : formatCents(r.balance_cents)}${r.balance_at ? ` (em ${formatDateTime(r.balance_at, rt.ctx.timezone)})` : ""}${r.status !== "updated" ? ` [${r.status}]` : ""}`);
+      return { summary: `Saldo consolidado ${formatCents(total)}. ${parts.join("; ")}. Valores informados pelos bancos na data indicada.`, data: { totalCents: total, accounts: rows } };
+    },
+  }),
+  defineTool({
     name: "list_credit_cards",
     description: "Lista cartões de crédito com limite usado/disponível e fatura atual (valores calculados pelo sistema).",
     schema: z.object({}),

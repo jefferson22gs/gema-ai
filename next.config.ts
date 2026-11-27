@@ -8,14 +8,17 @@ const supabaseOrigin = (() => {
   }
 })();
 
-// CSP: sem scripts de terceiros; conexões apenas com o próprio app e o Supabase.
+// CSP: sem scripts de terceiros; conexões apenas com o próprio app, o Supabase e o widget oficial
+// de Open Finance (Pluggy Connect, em iframe isolado — a senha bancária é digitada lá, nunca no GEMA).
+const PLUGGY = "https://connect.pluggy.ai https://api.pluggy.ai";
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
+  `img-src 'self' data: blob: ${supabaseOrigin} https://cdn.pluggy.ai`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace("https://", "wss://")}`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace("https://", "wss://")} ${PLUGGY}`.trim(),
+  "frame-src https://connect.pluggy.ai",
   "media-src 'self' blob:",
   "worker-src 'self'",
   "manifest-src 'self'",

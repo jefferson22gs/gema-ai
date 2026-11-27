@@ -2,6 +2,7 @@ import { Tabs } from "@/components/app/tabs";
 
 const tabs = [
   { href: "/app/financas", label: "Visão geral" },
+  { href: "/app/financas/bancos", label: "Bancos" },
   { href: "/app/financas/transacoes", label: "Lançamentos" },
   { href: "/app/financas/cartoes", label: "Cartões" },
   { href: "/app/financas/fluxo", label: "Fluxo de caixa" },

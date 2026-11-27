@@ -63,11 +63,11 @@
 ## Fase 5 — Open Finance
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |
 |---|---|---|---|---|---|---|---|---|---|
-| OF-01 | Arquitetura | `BankProvider` + schema (conexões, consentimentos, contas, snapshots, sync jobs/logs) + RLS | P0 | F1-05 | Migrations + testes de isolamento | Pendente | — | — | — |
-| OF-02 | Pluggy | Adaptador Pluggy (auth, connect token, items, accounts, transactions, webhooks) | P0 | OF-01 | Testes de contrato | Pendente | — | — | BLK-05 |
-| OF-03 | Sync | Sincronização inicial/incremental/paginada, idempotente, normalização para `transactions` | P0 | OF-02 | Reimportação não duplica; testes | Pendente | — | — | BLK-05 |
-| OF-04 | Consentimentos | Central de bancos/consentimentos, revogação interrompe sync | P0 | OF-01 | Revogado ⇒ sync bloqueado; teste | Pendente | — | — | BLK-05 |
-| OF-05 | Belvo | Adaptador futuro (interface apenas) | P2 | OF-01 | Stub com status "Não implementado" | Pendente | — | — | — |
+| OF-01 | Arquitetura | `BankProvider` + schema (conexões, consentimentos, contas, snapshots, sync jobs/logs) + RLS | P0 | F1-05 | Migrations + testes de isolamento | Testada | migration `20261127000001_open_finance.sql` (conexões, contas, snapshots, logs, cursores; RLS e escrita só pelo servidor); `src/server/open-finance/types.ts` | — | — |
+| OF-02 | Pluggy | Adaptador Pluggy (auth, connect token, items, accounts, transactions, webhooks) | P0 | OF-01 | Testes de contrato | Testada | `src/server/open-finance/pluggy.ts` (contrato da doc oficial 27/11/2026, /v2 por cursor, webhook HMAC); `tests/integrations/open-finance.test.ts` — sandbox real pendente (BLK-05) | — | BLK-05 |
+| OF-03 | Sync | Sincronização inicial/incremental/paginada, idempotente, normalização para `transactions` | P0 | OF-02 | Reimportação não duplica; testes | Testada | `syncConnection` idempotente (pendente→postado, sem duplicar), fila `open_finance.sync` + varredura diária, tratamento de 429; mesmos testes | — | BLK-05 |
+| OF-04 | Consentimentos | Central de bancos/consentimentos, revogação interrompe sync | P0 | OF-01 | Revogado ⇒ sync bloqueado; teste | Implementada | Tela `/app/financas/bancos` (saldo consolidado com data, consentimentos, sync, reconectar, revogar, histórico); revogação testada; E2E autenticado pendente (BLK-01/05) | — | BLK-05 |
+| OF-05 | Belvo | Adaptador futuro (interface apenas) | P2 | OF-01 | Stub com status "Não implementado" | Pendente | Interface `BankProvider` pronta; flag `integration.belvo` desligada | — | — |
 
 ## Fase 6 — Produtividade e Google
 | ID | Módulo | Descrição | Pri | Dep | Critério | Status | Evidência / Teste | Commit | Bloqueio |

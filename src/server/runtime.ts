@@ -8,6 +8,7 @@ import { EvolutionProvider } from "./messaging/evolution";
 import { MetaCloudProvider } from "./messaging/meta";
 import type { MessagingProvider } from "./messaging/types";
 import { WhaileysProvider } from "./messaging/whaileys";
+import { PluggyProvider } from "./open-finance/pluggy";
 
 /** Composição das dependências reais de produção (cada uma null quando não configurada). */
 export function googleConfig(): GoogleOAuthConfig | null {
@@ -39,6 +40,13 @@ export function metaProvider(): MetaCloudProvider | null {
   const appSecret = env.metaAppSecret();
   if (!phoneNumberId || !accessToken || !appSecret) return null;
   return new MetaCloudProvider({ phoneNumberId, accessToken, appSecret });
+}
+
+export function bankProvider(): PluggyProvider | null {
+  const clientId = env.pluggyClientId();
+  const clientSecret = env.pluggyClientSecret();
+  if (!clientId || !clientSecret) return null;
+  return new PluggyProvider({ clientId, clientSecret, webhookSecret: env.pluggyWebhookSecret() ?? null });
 }
 
 export function whaileysProvider(): WhaileysProvider | null {

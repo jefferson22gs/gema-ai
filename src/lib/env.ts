@@ -31,6 +31,10 @@ export const env = {
   metaAccessToken: () => read("META_WHATSAPP_ACCESS_TOKEN"),
   metaAppSecret: () => read("META_APP_SECRET"),
   metaVerifyToken: () => read("META_WEBHOOK_VERIFY_TOKEN"),
+  pluggyClientId: () => read("PLUGGY_CLIENT_ID"),
+  pluggyClientSecret: () => read("PLUGGY_CLIENT_SECRET"),
+  pluggyWebhookSecret: () => read("PLUGGY_WEBHOOK_SECRET"),
+  pluggyIncludeSandbox: () => read("PLUGGY_INCLUDE_SANDBOX") === "true",
   whaileysApiUrl: () => read("WHAILEYS_API_URL"),
   whaileysInstance: () => read("WHAILEYS_INSTANCE"),
   whaileysToken: () => read("WHAILEYS_TOKEN"),
@@ -58,6 +62,7 @@ export type IntegrationKey =
   | "google"
   | "billing"
   | "push"
+  | "pluggy"
   | "agendafacil365";
 
 export interface IntegrationConfigStatus {
@@ -114,6 +119,11 @@ export function integrationConfig(): IntegrationConfigStatus[] {
       BILLING_PROVIDER: env.billingProvider(),
       BILLING_WEBHOOK_SECRET: env.billingWebhookSecret(),
     }, "Nenhum provedor de pagamento escolhido ainda."),
+    status("pluggy", "Open Finance — Pluggy", {
+      PLUGGY_CLIENT_ID: env.pluggyClientId(),
+      PLUGGY_CLIENT_SECRET: env.pluggyClientSecret(),
+      PLUGGY_WEBHOOK_SECRET: env.pluggyWebhookSecret(),
+    }, "Somente leitura. Sem contrato de produção, apenas conectores de sandbox (Pluggy Bank)."),
     status("push", "Push PWA (VAPID)", {
       NEXT_PUBLIC_VAPID_PUBLIC_KEY: env.vapidPublicKey(),
       VAPID_PRIVATE_KEY: env.vapidPrivateKey(),
